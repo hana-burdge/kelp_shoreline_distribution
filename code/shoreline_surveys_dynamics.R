@@ -28,7 +28,6 @@ colnames(data_2023_aug)
 colnames(data_2023_jul)
 colnames(data_2023_sep)
 
-## Hana
 # 2024
 data_2024_jul <- read_excel(paste(mypath, "2024 SCFS shoreline.xlsx", sep="/"),
                             sheet = "july2024")
@@ -348,7 +347,7 @@ segment_map_2025 <- mapview(
   data_2025_coord,
   xcol = "x", ycol = "y",
   crs = 4269, grid = FALSE,
-  cex = 1, legend = TRUE,
+  cex = 2, legend = TRUE,
   zcol = "Location_friendly",
   col.regions = location_colors,  
   alpha = 0,
@@ -356,8 +355,8 @@ segment_map_2025 <- mapview(
 )
 segment_map_2025
 
-webshot::install_phantomjs()
-mapshot(segment_map_2025, file = "figures/segment_map_2025.png")
+#webshot::install_phantomjs()
+#mapshot(segment_map_2025, file = "figures/segment_map_2025.png")
 
 #### Merge both years' dataset =======================
 colnames(data_2022_coordinatesXY)
@@ -457,10 +456,10 @@ persistent_map <- mapview(
   xcol = "x", ycol = "y",
   crs = 4269,
   grid = FALSE,
-  cex = 3,
+  cex = 2,
   zcol = "kelp_dynamic",
   legend = TRUE,
-  col.regions = c("Absent" = "red", "Persistent" = "green"), # colors for these categories
+  col.regions = c("Absent" = "red", "Persistent" = "forestgreen"), # colors for these categories
   alpha = 0.8,
   lwd = 0,
   col = NA,
@@ -483,10 +482,10 @@ gain_loss_23_map <- mapview(
   xcol = "x", ycol = "y",
   crs = 4269,
   grid = FALSE,
-  cex = 4,
+  cex = 2,
   zcol = "kelp_dynamic",
   legend = TRUE,
-  col.regions = c("Gained in 2023" = "green", "Lost in 2023" = "red"), # colors for these categories
+  col.regions = c("Gained in 2023" = "forestgreen", "Lost in 2023" = "red"), # colors for these categories
   alpha = 0.2,
   lwd = 0,
   col = NA,
@@ -506,10 +505,10 @@ gain_loss_24_map <- mapview(
   xcol = "x", ycol = "y",
   crs = 4269,
   grid = FALSE,
-  cex = 4,
+  cex = 2,
   zcol = "kelp_dynamic",
   legend = TRUE,
-  col.regions = c("Gained in 2024" = "green", "Lost in 2024" = "red"), # colors for these categories
+  col.regions = c("Gained in 2024" = "forestgreen", "Lost in 2024" = "red"), # colors for these categories
   alpha = 0.2,
   lwd = 0,
   col = NA,
@@ -529,10 +528,10 @@ gain_loss_25_map <- mapview(
   xcol = "x", ycol = "y",
   crs = 4269,
   grid = FALSE,
-  cex = 4,
+  cex = 2,
   zcol = "kelp_dynamic",
   legend = TRUE,
-  col.regions = c("Gained in 2025" = "green", "Lost in 2025" = "red"), # colors for these categories
+  col.regions = c("Gained in 2025" = "forestgreen", "Lost in 2025" = "red"), # colors for these categories
   alpha = 0.2,
   lwd = 0,
   col = NA,
@@ -552,11 +551,11 @@ gain_map <- mapview(
   xcol = "x", ycol = "y",
   crs = 4269,
   grid = FALSE,
-  cex = 4,
+  cex = 2,
   zcol = "kelp_dynamic",
   legend = TRUE,
   col.regions = c("Gained in 2025" = "green", "Gained in 2024" = "blue", "Gained in 2023" = "cyan"), # colors for these categories
-  alpha = 0.2,
+  alpha = 0,
   lwd = 0,
   col = NA,
   layer.name = "Kelp Dynamics"
@@ -574,7 +573,7 @@ lost_map <- mapview(
   xcol = "x", ycol = "y",
   crs = 4269,
   grid = FALSE,
-  cex = 4,
+  cex = 2,
   zcol = "kelp_dynamic",
   legend = TRUE,
   col.regions = c("Lost in 2025" = "red", "Lost in 2024" = "orange", "Lost in 2023" = "pink"), # colors for these categories
@@ -618,7 +617,7 @@ region_map <- mapview(
   region_summary,
   xcol = "x", ycol = "y",
   crs = 4269, grid = FALSE,
-  cex= 1, legend = TRUE, zcol = "region",
+  cex= 2, legend = TRUE, zcol = "region",
   col.regions = c("blue", "red"),  alpha = 0,
   layer.name = "Region")
 # Set center and set zoom
@@ -626,7 +625,8 @@ region_map@map <- region_map@map %>%
   leaflet::setView(lng = -126.5, lat = 50.66, zoom = 10.5)
 region_map
 
-mapshot(region_map, file = "region_map.png")
+
+#mapshot(region_map, file = "region_map.png")
 
 # filter for gain and loss and calculate %
 gain_loss_summary <- region_summary %>%
@@ -663,4 +663,19 @@ gain_loss_percent <- ggplot(gain_loss_summary, aes(x = year, y = percent_signed,
   ) +
   theme_classic()
 gain_loss_percent
+
+#-------------------------------------------------------------------------------
+
+# RUN SOME MODELS
+
+#-------------------------------------------------------------------------------
+
+# Look at the data 
+kelp_models <- region_summary %>% 
+  mutate(kelp_dynamic = as.factor(kelp_dynamic))
+ 
+ggplot(kelp_models, aes(x = kelp_dynamic)) +
+  geom_bar()
+
+
 
