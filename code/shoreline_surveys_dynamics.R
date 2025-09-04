@@ -1,11 +1,3 @@
-###==================================================================
-### Shoreline segment surveys                        ################
-### Author: Romina Barbosa                           ################
-### Date: 27-Oct-2023                                ################
-### Date edition: 30-May-2025                        ################
-### Input data from drive                            ################
-###==================================================================
-
 library(ggplot2)
 library(lubridate)
 library(dplyr)
@@ -16,11 +8,10 @@ library(tidyverse)
 library(mapview)
 library(readxl)
 
-# Replace for YOUR path 
-mypath<- "~/Desktop/Kelp/Data Analysis/Shoreline Distribution /"
-setwd("~/Desktop/Kelp/Data Analysis/Shoreline Distribution /")
-dir()
 
+# Map the distribution of kelp overtime in relation to local sea surface temperature
+
+mypath<- "data/"
 
 data_2022_coordinatesXY <- read.csv(paste(mypath, "Kelp_SCFS_survey_data_2022_coordinatesXY.csv", sep="/"))#, sep=";")
 colnames(data_2022_coordinatesXY)
@@ -366,7 +357,7 @@ segment_map_2025 <- mapview(
 segment_map_2025
 
 webshot::install_phantomjs()
-mapshot(segment_map_2025, file = "segment_map_2025.png")
+mapshot(segment_map_2025, file = "figures/segment_map_2025.png")
 
 #### Merge both years' dataset =======================
 colnames(data_2022_coordinatesXY)
