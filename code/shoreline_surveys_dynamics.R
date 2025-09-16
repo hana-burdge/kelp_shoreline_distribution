@@ -1,3 +1,11 @@
+# ##############################################################################
+
+# Authoured by Romina Barbosa
+# Modified by Hana Burdge
+# Map the distribution of kelp overtime in relation to local sea surface temperature
+
+# ##############################################################################
+
 library(ggplot2)
 library(lubridate)
 library(dplyr)
@@ -7,9 +15,6 @@ library(tidyverse)
 # devtools::install_github("r-lib/conflicted")
 library(mapview)
 library(readxl)
-
-
-# Map the distribution of kelp overtime in relation to local sea surface temperature
 
 mypath<- "data/"
 
@@ -465,8 +470,15 @@ persistent_map <- mapview(
   col = NA,
   layer.name = "Kelp Dynamics"
 )
+# Set center and set zoom
+#persistent_map@map <- persistent_map@map %>%
+  #leaflet::setView(lng = -126.5, lat = 50.66, zoom = 11)
 
 persistent_map
+
+webshot::install_phantomjs()
+mapshot(persistent_map, file = "figures/persistence_map.png")
+
 
 # LOOKING AT DIFFERENT COMBINATIONS FOR PLOTS ----------------------------------
 # Plotting Gain vs Loss vs Gain/Loss
@@ -494,6 +506,9 @@ gain_loss_23_map <- mapview(
 
 gain_loss_23_map
 
+webshot::install_phantomjs()
+mapshot(gain_loss_23_map, file = "figures/gain_loss_23.png")
+
 # 2024 DYNAMICS-----------------------------------------------------------------
 # filter your data for dynamics in 2024
 gain_loss_24_subset <- merged_data_22_23_24_25 %>%
@@ -517,6 +532,8 @@ gain_loss_24_map <- mapview(
 
 gain_loss_24_map
 
+mapshot(gain_loss_24_map, file = "figures/gain_loss_24.png")
+
 # 2025 DYNAMICS-----------------------------------------------------------------
 # filter your data for dynamics in 2025
 gain_loss_25_subset <- merged_data_22_23_24_25 %>%
@@ -539,6 +556,8 @@ gain_loss_25_map <- mapview(
 )
 
 gain_loss_25_map
+
+mapshot(gain_loss_25_map, file = "figures/gain_loss_25.png")
 
 # ONLY GAINED AND ONLY LOST IN ALL YEARS----------------------------------------
 # filter your data for gained dynamics 
@@ -621,12 +640,11 @@ region_map <- mapview(
   col.regions = c("blue", "red"),  alpha = 0,
   layer.name = "Region")
 # Set center and set zoom
-region_map@map <- region_map@map %>%
-  leaflet::setView(lng = -126.5, lat = 50.66, zoom = 10.5)
+#region_map@map <- region_map@map %>%
+  #leaflet::setView(lng = -126.5, lat = 50.66, zoom = 11)
 region_map
 
-
-#mapshot(region_map, file = "region_map.png")
+mapview::mapshot(region_map, file = "figures/region_map.png", selfcontained = FALSE)
 
 # filter for gain and loss and calculate %
 gain_loss_summary <- region_summary %>%
@@ -661,8 +679,11 @@ gain_loss_percent <- ggplot(gain_loss_summary, aes(x = year, y = percent_signed,
     y = "Net Percentage of Segments",
     fill = "Region"
   ) +
+  scale_y_continuous(breaks = c(-30, -20, -10, 0, 10, 20, 30, 40)) +
   theme_classic()
 gain_loss_percent
+
+ggsave("figures/gain_loss_percet.png", plot = gain_loss_percent, width = 6, height = 4, dpi = 300)
 
 #-------------------------------------------------------------------------------
 
@@ -672,10 +693,23 @@ gain_loss_percent
 
 # Look at the data 
 kelp_models <- region_summary %>% 
-  mutate(kelp_dynamic = as.factor(kelp_dynamic))
+  mutate(kelp_dynamic = as.factor(kelp_dynamic)) %>% 
+  mutate(year = case_when(
+    kelp_dynamic %in% c("Gained in 2025", "Lost in 2025") ~ "2025",
+    kelp_dynamic %in% c("Gained in 2024", "Lost in 2024") ~ "2024",
+    kelp_dynamic %in% c("Gained in 2023", "Lost in 2023") ~ "2023"
+  ))
  
-ggplot(kelp_models, aes(x = kelp_dynamic)) +
+#----------------------
+# LOOK AT 2023 DYNAMICS
+#----------------------
+
+ggplot(kelp_models, aes(x = kelp_2023)) +
   geom_bar()
 
+kelp_models <- 
+
+lm_2023 <- lm(kelp_2023 ~ region, kelp_models)
+summary(lm_2023)
 
 
