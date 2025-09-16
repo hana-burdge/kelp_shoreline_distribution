@@ -1,14 +1,25 @@
-# >> top << ----
+# ##############################################################################
+
+# Authored by Rui Seabra
+# Modified by Hana Burdge
+# To plot water temperatures recorded by envloggers to relate to kelp distribution in the study area over time
+
+# ##############################################################################
+
 library(tidyverse)
-# install.packages("devtools")
-# devtools::install_github("ruiseabra/envlogger")
+library (tidyr)
+library(purrr)
+library(dplyr)
+install.packages("devtools")
+devtools::install_github("ruiseabra/envlogger")
 library(envlogger)
 library(patchwork)
 library(scales)
+install.packages("suncalc")
 library(suncalc)
 Sys.setenv(TZ = "UTC")
 
-FOLDER <- "hana burdge"
+FOLDER <- "data"
 LAT <- 50.7457
 LON <- -126.4989
 
