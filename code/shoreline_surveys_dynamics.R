@@ -564,6 +564,26 @@ gain_loss_25_map
 
 mapshot(gain_loss_25_map, file = "figures/gain_loss_25.png",vwidth = 700, vheight = 500, zoom = 10)
 
+
+# Arrange maps into one plot ---------------------------------------------------
+library(magick)
+
+# Read images
+img1 <- image_read("figures/gain_loss_23.png")
+img2 <- image_read("figures/gain_loss_24.png")
+img3 <- image_read("figures/gain_loss_25.png")
+
+# Label each image
+img1 <- image_annotate(img1, "A", size = 300, color = "black", gravity = "NorthWest")
+img2 <- image_annotate(img2, "B", size = 300, color = "black", gravity = "NorthWest")
+img3 <- image_annotate(img3, "C", size = 300, color = "black", gravity = "NorthWest")
+
+# Combine vertically
+combined <- image_append(c(img1, img2, img3), stack = TRUE)
+
+# Save output
+image_write(combined, "figures/combined_gain_loss_maps.png")
+
 # ONLY GAINED AND ONLY LOST IN ALL YEARS----------------------------------------
 # filter your data for gained dynamics 
 gain_subset <- merged_data_22_23_24_25 %>%
@@ -584,6 +604,7 @@ gain_map <- mapview(
   col = NA,
   layer.name = "Kelp Dynamics"
 )
+
 
 gain_map
 
@@ -649,6 +670,24 @@ region_map
 
 mapview::mapshot(region_map, file = "figures/region_map.png", vwidth = 700, vheight = 500, zoom = 10)
 
+
+# Read images
+img4 <- image_read("figures/segment_map_2025.png")
+img5 <- image_read("figures/region_map.png")
+
+# Label each image
+img4 <- image_annotate(img4, "A", size = 300, color = "black", gravity = "NorthWest")
+img5 <- image_annotate(img5, "B", size = 300, color = "black", gravity = "NorthWest")
+
+
+# Combine vertically
+combined <- image_append(c(img4, img5))
+
+# Save output
+image_write(combined, "figures/combined_segment_region_maps.png")
+
+
+# Gain and Loss Percent --------------------------------------------------------
 # filter for gain and loss and calculate %
 gain_loss_summary <- region_summary %>%
   filter(kelp_dynamic %in% c("Gained in 2025", "Gained in 2024", "Gained in 2023",

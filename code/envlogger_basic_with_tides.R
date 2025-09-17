@@ -19,6 +19,74 @@ install.packages("suncalc")
 library(suncalc)
 Sys.setenv(TZ = "UTC")
 
+################################################################################
+
+# Mapping Logger Locations 
+
+################################################################################
+
+library(readr)
+library(leaflet)
+
+logger_locations <- read_csv("data/logger_locations.csv")
+
+# Split data: BATI5 vs others
+top_labels <- logger_locations %>% filter(site_id != "BATI5")
+bottom_label <- logger_locations %>% filter(site_id == "BATI5")
+
+# Create map
+logger_locations_map <- leaflet(logger_locations) %>%
+  addTiles() %>%  # default base map
+  addProviderTiles("CartoDB.Positron") %>% 
+  addCircleMarkers(
+    ~lon, ~lat,        
+    radius = 2,                  
+    color = "blue") %>% 
+  # Labels for most points (on top)
+  addLabelOnlyMarkers(
+    data = top_labels,
+    ~lon, ~lat,
+    label = ~site_id,
+    labelOptions = labelOptions(
+      noHide = TRUE,             
+      direction = "top",         
+      textOnly = TRUE,           
+      style = list(
+        "color" = "black",
+        "font-weight" = "bold",
+        "font-size" = "11px",
+        "padding" = "2px")
+    )
+  ) %>%
+  # Label for BATI5 (underneath)
+  addLabelOnlyMarkers(
+    data = bottom_label,
+    ~lon, ~lat,
+    label = ~site_id,
+    labelOptions = labelOptions(
+      noHide = TRUE,             
+      direction = "bottom",      # below the point
+      textOnly = TRUE,           
+      style = list(
+        "color" = "black",
+        "font-weight" = "bold",
+        "font-size" = "11px",
+        "padding" = "2px")
+    )
+  )
+
+# Show map
+logger_locations_map
+
+mapshot(logger_locations_map, file = "figures/logger_locations_map.png", vwidth = 860, vheight = 400, zoom = 10)
+
+################################################################################
+
+# Cleaning Logger Data
+
+################################################################################
+
+
 FOLDER <- "data"
 LAT <- 50.7457
 LON <- -126.4989
