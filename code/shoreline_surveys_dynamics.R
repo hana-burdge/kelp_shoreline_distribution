@@ -348,6 +348,11 @@ data_2025_coord <- data_2025_coord %>%
 # make rendered html self-contained
 mapviewOptions(fgb = FALSE)
 
+mapviewOptions(viewBounds = list(
+  x = c(-126.76, -126.25),  # longitudes
+  y = c(50.54, 50.78)       # latitudes
+))
+
 segment_map_2025 <- mapview(
   data_2025_coord,
   xcol = "x", ycol = "y",
@@ -356,12 +361,13 @@ segment_map_2025 <- mapview(
   zcol = "Location_friendly",
   col.regions = location_colors,  
   alpha = 0,
-  layer.name = "Survey Locations"
+  layer.name = "Survey Locations",
+  legend.title.cex = 0.5,     
+  legend.text.cex = 0.5
 )
 segment_map_2025
 
-#webshot::install_phantomjs()
-#mapshot(segment_map_2025, file = "figures/segment_map_2025.png")
+mapshot(segment_map_2025, file = "figures/segment_map_2025.png",vwidth = 700, vheight = 600, zoom = 10)
 
 #### Merge both years' dataset =======================
 colnames(data_2022_coordinatesXY)
@@ -472,12 +478,12 @@ persistent_map <- mapview(
 )
 # Set center and set zoom
 #persistent_map@map <- persistent_map@map %>%
-  #leaflet::setView(lng = -126.5, lat = 50.66, zoom = 11)
+  #leaflet::setView(lng = -126.5, lat = 50.66, zoom = 11.2)
 
 persistent_map
 
 webshot::install_phantomjs()
-mapshot(persistent_map, file = "figures/persistence_map.png")
+mapshot(persistent_map, file = "figures/persistence_map.png", vwidth = 700, vheight = 500, zoom = 10)
 
 
 # LOOKING AT DIFFERENT COMBINATIONS FOR PLOTS ----------------------------------
@@ -506,8 +512,7 @@ gain_loss_23_map <- mapview(
 
 gain_loss_23_map
 
-webshot::install_phantomjs()
-mapshot(gain_loss_23_map, file = "figures/gain_loss_23.png")
+mapshot(gain_loss_23_map, file = "figures/gain_loss_23.png",vwidth = 700, vheight = 500, zoom = 10)
 
 # 2024 DYNAMICS-----------------------------------------------------------------
 # filter your data for dynamics in 2024
@@ -532,7 +537,7 @@ gain_loss_24_map <- mapview(
 
 gain_loss_24_map
 
-mapshot(gain_loss_24_map, file = "figures/gain_loss_24.png")
+mapshot(gain_loss_24_map, file = "figures/gain_loss_24.png",vwidth = 700, vheight = 500, zoom = 10)
 
 # 2025 DYNAMICS-----------------------------------------------------------------
 # filter your data for dynamics in 2025
@@ -557,7 +562,7 @@ gain_loss_25_map <- mapview(
 
 gain_loss_25_map
 
-mapshot(gain_loss_25_map, file = "figures/gain_loss_25.png")
+mapshot(gain_loss_25_map, file = "figures/gain_loss_25.png",vwidth = 700, vheight = 500, zoom = 10)
 
 # ONLY GAINED AND ONLY LOST IN ALL YEARS----------------------------------------
 # filter your data for gained dynamics 
@@ -639,12 +644,10 @@ region_map <- mapview(
   cex= 2, legend = TRUE, zcol = "region",
   col.regions = c("blue", "red"),  alpha = 0,
   layer.name = "Region")
-# Set center and set zoom
-#region_map@map <- region_map@map %>%
-  #leaflet::setView(lng = -126.5, lat = 50.66, zoom = 11)
+
 region_map
 
-mapview::mapshot(region_map, file = "figures/region_map.png", selfcontained = FALSE)
+mapview::mapshot(region_map, file = "figures/region_map.png", vwidth = 700, vheight = 500, zoom = 10)
 
 # filter for gain and loss and calculate %
 gain_loss_summary <- region_summary %>%
