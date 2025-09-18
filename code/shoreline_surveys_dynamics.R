@@ -680,12 +680,12 @@ region_map <- mapview(
 
 region_map
 
-mapview::mapshot(region_map, file = "figures/region_map.png", vwidth = 700, vheight = 500, zoom = 10)
+mapview::mapshot(region_map, file = "figures/region_map.png", vwidth = 840, vheight = 500, zoom = 10)
 
 
 # Read images
-img4 <- image_read("figures/segment_map_2025.png")
-img5 <- image_read("figures/region_map.png")
+img4 <- image_read("figures/region_map.png")
+img5 <- image_read("figures/logger_locations_map.png")
 
 # Label each image
 img4 <- image_annotate(img4, "A", size = 300, color = "black", gravity = "NorthWest")
@@ -693,10 +693,10 @@ img5 <- image_annotate(img5, "B", size = 300, color = "black", gravity = "NorthW
 
 
 # Combine vertically
-combined <- image_append(c(img4, img5))
+combined <- image_append(c(img4, img5), stack = TRUE)
 
 # Save output
-image_write(combined, "figures/combined_segment_region_maps.png")
+image_write(combined, "figures/combined_region_logger_maps.png")
 
 
 # Gain and Loss Percent --------------------------------------------------------

@@ -30,9 +30,25 @@ library(leaflet)
 
 logger_locations <- read_csv("data/logger_locations.csv")
 
+logger_locations <- logger_locations %>% 
+  mutate(region = case_when(
+    site_id %in% c("SC3", "SC4", "BATI12 (BATI14)", "BATI3", "BATI2") ~ "Dynamic",
+    site_id %in% c("SC17", "SC18", "SC1", "BATI5", "SC2", "SC9", "BATI9", "SC10", "SC20", 
+                   "SC7", "SC21", "SC6", "SC5", "BATI29", "SC11") ~ "Inlet"
+  ))
+
+library(leaflet)
+library(dplyr)
+
 # Split data: BATI5 vs others
 top_labels <- logger_locations %>% filter(site_id != "BATI5")
 bottom_label <- logger_locations %>% filter(site_id == "BATI5")
+
+# Create a color palette for the 'region' column
+pal <- colorFactor(
+  palette = c("blue", "red"),   # choose colors for your regions
+  domain = logger_locations$region
+)
 
 # Create map
 logger_locations_map <- leaflet(logger_locations) %>%
@@ -41,7 +57,8 @@ logger_locations_map <- leaflet(logger_locations) %>%
   addCircleMarkers(
     ~lon, ~lat,        
     radius = 2,                  
-    color = "blue") %>% 
+    color = ~pal(region),       # color by region
+  ) %>% 
   # Labels for most points (on top)
   addLabelOnlyMarkers(
     data = top_labels,
@@ -53,7 +70,6 @@ logger_locations_map <- leaflet(logger_locations) %>%
       textOnly = TRUE,           
       style = list(
         "color" = "black",
-        "font-weight" = "bold",
         "font-size" = "11px",
         "padding" = "2px")
     )
@@ -69,16 +85,23 @@ logger_locations_map <- leaflet(logger_locations) %>%
       textOnly = TRUE,           
       style = list(
         "color" = "black",
-        "font-weight" = "bold",
         "font-size" = "11px",
         "padding" = "2px")
     )
+  ) %>%
+  addLegend(
+    "topright",
+    pal = pal,
+    values = ~region,
+    title = "Region"
   )
 
 # Show map
 logger_locations_map
 
-mapshot(logger_locations_map, file = "figures/logger_locations_map.png", vwidth = 860, vheight = 400, zoom = 10)
+
+
+mapshot(logger_locations_map, file = "figures/logger_locations_map.png", vwidth = 840, vheight = 400, zoom = 10)
 
 ################################################################################
 
