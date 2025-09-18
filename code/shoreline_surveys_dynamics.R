@@ -654,6 +654,18 @@ region_summary <- merged_data_22_23_24_25 %>%
     Location %in% c("Village", "Swanson", "Crease", "Gilford_LowerKnight", "South_Arrow") ~ "Dynamic"
   ))
 
+region_summary <- merged_data_22_23_24_25 %>%
+  filter(!Location %in% c("Hanson", "Midsummer")) %>%
+  mutate(
+    region = case_when(
+      Location == "South_Bonwick" & Site <= 314 ~ "Inlet",
+      Location == "South_Bonwick" & Site >= 315 & Site <= 470 ~ "Dynamic",
+      Location %in% c("Gilford_Point", "Port_Elisabeth", "Turnour_North", "Turnour_South", 
+                      "Gwayasdums", "Crammer_South", "Minstrel", "Doctor") ~ "Inlet",
+      Location %in% c("Village", "Swanson", "Crease", "Gilford_LowerKnight", "South_Arrow") ~ "Dynamic"
+    ))
+
+
 # make rendered html self-contained
 mapviewOptions(fgb = FALSE)
 
