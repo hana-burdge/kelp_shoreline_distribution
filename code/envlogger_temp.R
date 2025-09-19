@@ -10,12 +10,12 @@ library(tidyverse)
 library (tidyr)
 library(purrr)
 library(dplyr)
-install.packages("devtools")
-devtools::install_github("ruiseabra/envlogger")
+#install.packages("devtools")
+#devtools::install_github("ruiseabra/envlogger")
 library(envlogger)
 library(patchwork)
 library(scales)
-install.packages("suncalc")
+#install.packages("suncalc")
 library(suncalc)
 Sys.setenv(TZ = "UTC")
 
@@ -142,6 +142,7 @@ get_dn <- function(dat, ylim) {
   dn
 }
 
+# BEGIN HERE
 # gather data ----
 dat <- FOLDER %>%
   READ_ENV(just_rep = TRUE, approx_hourly = TRUE, full_days = TRUE) %>%
@@ -171,68 +172,88 @@ dat <- dat %>%
     lat, lon, .after = sh
   )
 
-## grab tides ----
-fn <- "tides.RDS"
-if (!file.exists(fn)) {
-  # this only has to be executed if "tides.RDS" is not present
-  # I already calculated the tides for Salmon Coast Field Station on Gilford Island, Canada for the period 2022-2026
-  # the tides are calculated using fes2022
-  # (https://www.aviso.altimetry.fr/en/data/products/auxiliary-products/global-tide-fes/release-fes22.html)
-  # this software is quite complex to install
-  # feel free to try to install it as it will give you a lot more flexibility if you can run it yourself
-  # otherwise, if you want tides for a different location/period, just let me know lat, lon, start and end dates and I can quickly calculate it for you
-  source("~/Dropbox/RS/bio/datasets/fes2022b/fes2022b.R")
-  tid <- tides(
-    lat = LAT,
-    lon = LON,
-    start_date = as.Date("2022-01-01"),
-    end_date   = as.Date("2027-01-01"),
-    step_mins  = 60, extrapolated = TRUE) %>%
-    ungroup()
-  saveRDS(tid, fn)
-}
-tid <- readRDS(fn)
+# Add tide station names 
+dat <- dat %>% 
+  mutate(tide_station = case_when(
+    id %in% c("sc17", "sc4", "bati3", "bati12", "sc3", "sc18", "bati12") ~ "Cedar Island",
+    id %in% c("bati29", "sc9", "sc10", "bati9", "sc7", "sc20", "sc21", "sc1", "sc2") ~ "Montagu Point",
+    id %in% c("sc5", "sc6") ~ "Kwatsi Bay", 
+    id %in% c("sc11") ~ "Siwash Bay"
+  ))
 
-dat <- dat %>%
-    left_join(
-      tid,
-      by = "t"
-    )
+# load in tides 
+library(tidyverse)
+tid <- readRDS("data/tides_hana.RDS")
+tid <- tid %>% 
+  rename(tide_station = site) %>% 
+  select(-c("lat", "lon"))
 
-DAT <- dat
+# just high tides
+filter(tid, hi)
+# just low tides from SCFS
+filter(tid, lo, tide_station == "Salmon Coast Field Station")
+# ranked from lowest low tide
+filter(tid, lo, tide_station == "Salmon Coast Field Station") %>%
+  arrange(h) # first 9 all in December or January
+# the plot attached
+tid %>%
+  filter(lo) %>%
+  ggplot() +
+  geom_line(aes(t, h / 100)) +
+  facet_grid(rows = vars(tide_station)) +
+  xlab("") + ylab("height (m)") +
+  ggtitle("height of low tides (relative to average sea level)")
+
+dat_final <- dat %>%
+  left_join(
+    tid,
+    by = c("t", "tide_station")
+  )
+
+
+# ------------------------------------------------------------------------------
+# FUNCTION FOR PLOTTING TIDES WITH TEMP
 
 # PLOT ----
 W <- unit(33.87, "cm") / 3
 H <- unit(19.05, "cm") / 3
 
-plot_env_tides <- function(
+# Create a function to make plotting easier 
+#plot_env_tides <- function(
     logger,
     T10 = NULL, T11 = NULL,
     T20 = NULL, T21 = NULL,
     wh = 25, DN = TRUE,
     fn = NULL, Wmult = 0.5, Hmult = 0.9
-) {
-  dat <- filter(dat, sh == logger)
-
-  t10 <- if (is.null(T10)) min(dat$t) else as.POSIXct(T10)
-  t11 <- if (is.null(T11)) max(dat$t) else as.POSIXct(T11)
+) 
+  {
+  #filters final df for only rows specific to logger that you want to plot
+  dat_final_used <- filter(dat_final, sh == logger)
+  
+  # to define the start and end times of the plot 
+  t10 <- if (is.null(T10)) min(dat_final$t) else as.POSIXct(T10)
+  t11 <- if (is.null(T11)) max(dat_final$t) else as.POSIXct(T11)
   detail <- !any(is.null(T20), is.null(T21))
   if (detail) {
     t20 <- as.POSIXct(T20)
     t21 <- as.POSIXct(T21)
   }
-
-  print(dat$t %>% range())
-
-  dat <- filter(dat, between(t, t10, t11))
-
+  
+  print(dat_final_used$t %>% range())
+  
+  # Keeps only rows in the timeframe that wants to be plotted 
+  dat_final_used <- filter(dat_final_used, between(t, t10, t11))
+  
+  # define x and y limits 
   if (detail) xlim <- c(as.POSIXct(t20), as.POSIXct(t21))
-  ylim <- range(dat$temp)
-
-  dn   <- get_dn(dat, ylim)
+  ylim <- range(dat_final_used$temp)
+  
+  # now safe to call get_dn - for tide envelopes 
+  dn   <- get_dn(dat_final_used, ylim)
   ylim <- dn %>% select(-t) %>% unlist() %>% range()
-
-  p1 <- ggplot(dat)
+  
+  # main plot 
+  p1 <- ggplot(dat_final_used)
 
   if (detail) {
     p1 <- p1 +
@@ -244,9 +265,10 @@ plot_env_tides <- function(
       )
   }
 
+  # add main line plot - this is temp here 
   p1 <- p1 +
     geom_line(aes(t, temp), col = "grey10") +
-    scale_x_datetime(expand = c(0,0), label = label_date_short()) +
+    scale_x_datetime(expand = c(0,0), labels = label_date_short()) +
     theme_bw() +
     theme(
       axis.title         = element_blank(),
@@ -258,7 +280,7 @@ plot_env_tides <- function(
     ylim(ylim)
 
   if (detail) {
-    p2 <- dat %>%
+    p2 <- dat_final_used %>%
       filter(between(t, t20, t21)) %>%
       ggplot()
 
@@ -266,20 +288,23 @@ plot_env_tides <- function(
       p2 <- p2 +
         geom_ribbon(
           data = dn,
-          aes(t, ymin = ymin, ymax = ymax), fill = "grey90"
+          mapping = aes(x = t, ymin = ymin, ymax = ymax),
+          inherit.aes = FALSE,
+          fill = "grey90", 
+          show.legend = FALSE
         )
     }
 
+    dat_final_used <- dat_final_used %>%
+      mutate(h_rescaled = scales::rescale(h, to = c(ylim[1] + 1, ylim[1] + wh)))
+    
     p2 <- p2 +
       geom_ribbon(
-        aes(
-          t,
-          ymax = scales::rescale(h, to = c(ylim[1] + 1, ylim[1] + wh)),
-          ymin = ylim[1]),
+        aes(t, ymin = ylim[1], ymax = h_rescaled),
         fill = "steelblue1", alpha = 0.5
       ) +
       geom_line(aes(t, temp), col = "grey10") +
-      scale_x_datetime(limits = c(t20, t21), label = label_date_short()) +
+      scale_x_datetime(limits = c(t20, t21), labels = label_date_short()) +
       theme_bw() +
       theme(
         panel.grid.major.x = element_blank(),
@@ -293,8 +318,8 @@ plot_env_tides <- function(
   }
 
   p <- p1
-  if (detail) p <- p + p2
-  p <- p + plot_layout(ncol = 1)
+  if (detail) p <- p1 / p2
+  #p <- p + plot_layout(ncol = 1)
 
   if (!is.null(fn)) {
     ggsave(
@@ -317,19 +342,67 @@ plot_env_tides(
   T20 = "2024-01-06", T21 = "2024-01-23",
   fn = "2")
 
-## your data ----
-all_data <- select(DAT, id, t, temp, h, lo, hi)
 
-# all data for a given id
-filter(all_data, id == "bati14")
+
+# ------------------------------------------------------------------------------
+# PLOTTING TEMP 
+
+# select only necessary columns 
+all_data <- select(dat_final, id, t, temp, h, lo, hi)
 
 # all data for a given id and only during high tide
-bati14_high_tide <- filter(all_data, id == "bati14", hi)
+all_data_high_tide <- filter(all_data, hi)
 
-ggplot(bati14_high_tide) +
-  geom_line(aes(t, temp))
+# assigning stations to region and averaging across
+all_data_high_tide_region_avg <- all_data_high_tide %>% 
+  mutate(region = case_when(
+    id %in% c("sc3", "sc4", "bati12", "bati3") ~ "Dynamic",
+    id %in% c("sc17", "sc18", "sc1", "sc2", "bati5", "bati9", "sc9", "sc10", "sc20", "sc7", 
+              "sc21", "sc6", "sc5", "bati29", "sc11") ~ "Inlet"
+  )) %>% 
+  group_by(region, t) %>% 
+  summarise(avg_temp = mean(temp, na.rm = TRUE))
+
+# plotting temperature by region
+library(scales)  # for date formatting
+ggplot(all_data_high_tide_region_avg) +
+  geom_line(aes(t, avg_temp)) +
+  facet_wrap(~ region, scales = "free_y", ncol = 1) +
+  scale_x_datetime(
+    date_labels = "%b %Y",      # label format: Month Year
+    date_breaks = "1 month"     # place a tick every month
+  ) +
+  labs(
+    x = "",                 # x-axis label
+    y = "Average Temperature (°C)"  # y-axis label
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # rotate labels to avoid overlap
+  )
+
+ggsave("figures/temp_region_plot_facet.png", plot = last_plot(), width = 20, height = 12, dpi = 300)
+
+# plotting it a bit differently 
+ggplot(all_data_high_tide_region_avg, aes(x = t, y = avg_temp, colour = region)) +
+  geom_line() +
+  scale_x_datetime(
+    date_labels = "%b %Y",      # label format: Month Year
+    date_breaks = "1 month"     # place a tick every month
+  ) +
+  scale_color_manual(name = "Region",
+                     values = c("Dynamic" = "blue", "Inlet" = "red")) +
+  labs(
+    x = "",                 # x-axis label
+    y = "Average Temperature (°C)"  # y-axis label
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # rotate labels to avoid overlap
+  ) 
 
 
+ggsave("figures/temp_region_plot_colour.png", plot = last_plot(), width = 20, height = 12, dpi = 300)
 
 
 

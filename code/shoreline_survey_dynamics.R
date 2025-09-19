@@ -403,23 +403,6 @@ merged_data_22_23_24_25$kelp_dynamic<- as.numeric(as.character(merged_data_22_23
   as.numeric(as.character(merged_data_22_23_24_25$kelp_2025))
 
 # Renaming kelp dynamic numbers to actual dynamic
-# sum = 0 (0+0+0+0) -> absent 
-# sum = 1 (1+0+0+0) -> loss
-# sum = 2 (0+2+0+0) -> gain/loss
-# sum = 3 (1+2+0+0) -> loss
-# sum = 4 (0+0+4+0) -> gain/loss
-# sum = 5 (1+0+4+0) -> gain/loss
-# sum = 6 (0+2+4+0) -> gain/loss
-# sum = 7 (1+2+4+0) -> loss
-# sum = 8 (0+0+0+8) -> gain
-# sum = 9 (1+0+0+8) -> gain/loss
-# sum = 10 (0+2+0+8) -> gain/loss
-# sum = 11 (1+2+0+8) -> gain/loss
-# sum = 12 (0+0+4+8) -> gain
-# sum = 13 (1+0+4+8) -> gain/loss
-# sum = 14 (0+2+4+8) -> gain
-# sum = 15 (1+2+4+8) -> persistent
-
 merged_data_22_23_24_25$kelp_dynamic <- recode(
   as.character(merged_data_22_23_24_25$kelp_dynamic),
   "0" = "Absent",
@@ -741,29 +724,112 @@ ggsave("figures/gain_loss_percet.png", plot = gain_loss_percent, width = 6, heig
 
 #-------------------------------------------------------------------------------
 
-# RUN SOME MODELS
+# LOOKING AT DYNAMICS AND TEMP
 
 #-------------------------------------------------------------------------------
 
-# Look at the data 
-kelp_models <- region_summary %>% 
-  mutate(kelp_dynamic = as.factor(kelp_dynamic)) %>% 
-  mutate(year = case_when(
-    kelp_dynamic %in% c("Gained in 2025", "Lost in 2025") ~ "2025",
-    kelp_dynamic %in% c("Gained in 2024", "Lost in 2024") ~ "2024",
-    kelp_dynamic %in% c("Gained in 2023", "Lost in 2023") ~ "2023"
-  ))
- 
-#----------------------
-# LOOK AT 2023 DYNAMICS
-#----------------------
+source("code/envlogger_temp.R")
 
-ggplot(kelp_models, aes(x = kelp_2023)) +
-  geom_bar()
+# Making a df with kelp presence in each year
+library(dplyr)
+library(tidyr)
 
-kelp_models <- 
+kelp_presence <- region_summary %>%
+  # Keep only the region and yearly kelp columns
+  select(region, kelp_2022, kelp_2023, kelp_2024, kelp_2025) %>%
+  
+  
+  # Pivot the yearly kelp columns into two columns: 'year' and 'kelp_presence'
+  pivot_longer(
+    cols = starts_with("kelp_"),   
+    names_to = "year",             
+    values_to = "kelp_presence",   
+    values_drop_na = TRUE          
+  ) %>%
+  
+  # Convert year to numeric
+  mutate(year = as.integer(sub("kelp_", "", year))) %>%
+  
+  # Convert kelp_presence to numeric and recode to 1/0
+  mutate(
+    kelp_presence = as.numeric(as.character(kelp_presence)),  
+    kelp_presence = ifelse(kelp_presence > 0, 1, 0)           
+  ) 
 
-lm_2023 <- lm(kelp_2023 ~ region, kelp_models)
-summary(lm_2023)
+  # Calculate percent presence by region and year
+kelp_presence_summary <- kelp_presence %>%
+  group_by(year, region, kelp_presence) %>%    
+  summarise(count = n(), .groups = "drop") # count segments by presence
+
+kelp_presence_summary <- kelp_presence_summary %>% 
+  group_by(year, region) %>%                     # group by year and region for total
+  mutate(total_segments = sum(count)) %>% # sum over 0 and 1 to get total
+  mutate(percent = (count / total_segments) * 100) %>%
+  ungroup()
+
+kelp_presence_summary <- kelp_presence_summary %>% 
+  filter(kelp_presence == 1)
 
 
+
+# Combine daily temperature data with yearly kelp presence
+kelp_presence_temp <- temp_data %>%
+  # Extract the year from the date column 't' to match with kelp presence
+  mutate(year = as.integer(format(t, "%Y"))) 
+
+# calculate the max temps for each year
+temp_summary <- temp_data %>%
+  mutate(year = as.integer(format(t, "%Y"))) %>%   # extract year
+  group_by(year, region) %>%
+  summarise(
+    max_temp = max(avg_temp, na.rm = TRUE),           # maximum temperature
+    p90_temp  = quantile(avg_temp, 0.9, na.rm = TRUE), # 90th percentile temperature
+    .groups = "drop"
+  )
+  
+  # Left join with kelp presence data by 'year' and 'region'
+  # This replicates the yearly kelp presence across all daily measurements
+kelp_presence_temp <- kelp_presence_summary %>%  # your yearly percent presence data
+  left_join(temp_summary, by = c("year", "region"))
+
+# plotting percent presence with temp
+ggplot(kelp_presence_temp, aes(x = max_temp, y = percent, colour = region)) +
+  geom_point() +
+  geom_line() +
+  theme_classic() +
+  labs(
+    x = "Yearly Maximum Temperature (°C)",
+    y = "Percent Kelp Presence") +
+  scale_color_manual(name = "Region",
+                     values = c("Dynamic" = "blue", "Inlet" = "red")) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10))
+
+ggsave("figures/presence_temp.png", plot = last_plot(), width = 12, height = 9, dpi = 300)
+
+# plotting percent presence over time
+ggplot(kelp_presence_temp, aes(x = year, y = percent, colour = region)) +
+  geom_point() +
+  geom_line() +
+  theme_classic() +
+  labs(
+    x = "",
+    y = "Percent Kelp Presence") +
+  scale_color_manual(name = "Region",
+                     values = c("Dynamic" = "blue", "Inlet" = "red")) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10))
+
+ggsave("figures/presence_time.png", plot = last_plot(), width = 12, height = 9, dpi = 300)
+
+
+# plotting max temp over time 
+ggplot(kelp_presence_temp, aes(x = year, y = max_temp, colour = region)) +
+  geom_point() +
+  geom_line() +
+  theme_classic() +
+  labs(
+    x = "",
+    y = "Yearly Maximum Temperature (°C)") +
+  scale_color_manual(name = "Region",
+                     values = c("Dynamic" = "blue", "Inlet" = "red"))
+
+ggsave("figures/temp_time.png", plot = last_plot(), width = 12, height = 9, dpi = 300)

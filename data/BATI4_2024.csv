@@ -1,23 +1,23 @@
 ------------------------------,--------------------
 www.electricblue.eu, Portugal
 ------------------------------,--------------------
-EnvLogger version, T7.3
-EnvLogger Viewer version, 5.2
+EnvLogger version,T7.3
+EnvLogger Viewer version,5.2
 downloading device type, android
-device, Armor X10 Pro
-device name, Armor X10 Pro
+device,Armor X10 Pro
+device name,Armor X10 Pro
 downloading mode, manual
 ------------------------------,--------------------
-serial number, 040F DF00 587E 05
-custom name, BATI4
+serial number,040F DF00 587E 05
+custom name,BATI5
 temperature, degrees Celsius
-time zone, UTC+0000
-sampling resolution, 0.5
-samples, 18433
-time diff [logger-smartphone](sec), 15
-lat, 50.640958
-long, -126.438088
-accuracy (m), 2.3
+time zone,UTC+0000
+sampling resolution,0.5
+samples,18433
+time diff [logger-smartphone](sec),15
+lat,50.640958
+long,-126.438088
+accuracy (m),2.3
 ------------------------------,--------------------
 time,temp
 2023-08-31 15:30:00,13.5
