@@ -833,3 +833,157 @@ ggplot(kelp_presence_temp, aes(x = year, y = max_temp, colour = region)) +
                      values = c("Dynamic" = "blue", "Inlet" = "red"))
 
 ggsave("figures/temp_time.png", plot = last_plot(), width = 12, height = 9, dpi = 300)
+
+
+# ------------------------------------------------------------------------------
+
+# TAKE A LOOK AT SOME MODELS FOR KELP PRESENCE AND MAX YEARLY TEMP
+
+# ------------------------------------------------------------------------------
+# Scale only the predictor
+kelp_presence_scaled <- kelp_presence_temp %>%
+  mutate(max_temp_scaled = scale(max_temp))
+
+# Fit the linear model using scaled temperature but original percent
+lm_scaled <- lm(percent ~ max_temp_scaled * region, data = kelp_presence_scaled)
+summary(lm_scaled)
+
+# checking for normally distributed residuals with hist
+lm_scaled$lm_scaled_resids <-resid(lm_scaled) 
+
+hist(lm_scaled$lm_scaled_resids) 
+
+# look again with QQ Plot
+library(car)
+qqPlot(lm_scaled$lm_scaled_resids) 
+
+# checking for relationships between residuals and predictors
+residualPlot(lm_scaled, tests = FALSE) 
+
+# Plot
+library(dplyr)
+library(ggplot2)
+
+# Generate predictions with confidence intervals
+kelp_presence_scaled <- kelp_presence_scaled %>%
+  # predict with interval = "confidence"
+  mutate(
+    fit = predict(lm_scaled, newdata = kelp_presence_scaled, interval = "confidence")[, "fit"],
+    lwr = predict(lm_scaled, newdata = kelp_presence_scaled, interval = "confidence")[, "lwr"],
+    upr = predict(lm_scaled, newdata = kelp_presence_scaled, interval = "confidence")[, "upr"]
+  )
+
+# Plot with CI
+ggplot(kelp_presence_scaled, aes(x = max_temp, y = percent, color = region, fill = region)) +
+  geom_point(size = 3) +  # actual data
+  geom_line(aes(y = fit), size = 1) +  # regression line
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.2, color = NA) +  # CI shaded
+  theme_classic() +
+  labs(
+    x = "Maximum Temperature (°C)",
+    y = "Percent Kelp Presence",
+    color = "Region",
+    fill = "Region"
+  ) +
+  scale_color_manual(values = c("Dynamic" = "blue", "Inlet" = "red")) +
+  scale_fill_manual(values = c("Dynamic" = "blue", "Inlet" = "red")) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10))
+
+ggsave("figures/lm_presnce_temp.png", plot = last_plot(), width = 12, height =9, dpi = 300)
+
+# ------------------------------------------------------------------------------
+
+# NOW LOOK AT KELP PRESENCE AN MEAN ANNUAL TEMP, SUMMER, AND SPRING TEMPS
+
+# ------------------------------------------------------------------------------
+
+# MEAN ANNUAL ------------------------------------------------------------------
+mean_annual_temp <- temp_data %>% 
+  mutate(year = as.integer(format(t, "%Y"))) %>%   # extract year
+  group_by(year, region) %>%
+  summarise(
+    mean_temp = mean(avg_temp, na.rm = TRUE),         
+    .groups = "drop"
+  )
+
+kelp_mean_temp <- kelp_presence_summary %>%  # your yearly percent presence data
+  left_join(mean_annual_temp, by = c("year", "region"))
+
+# look at what it looks like
+ggplot(kelp_mean_temp, aes(x = mean_temp, y = percent, colour = region)) +
+  geom_point() +
+  geom_line() +
+  theme_classic() +
+  labs(
+    x = "Mean Annual Temperature (°C)",
+    y = "Percent Kelp Presence") +
+  scale_color_manual(name = "Region",
+                     values = c("Dynamic" = "blue", "Inlet" = "red")) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10))
+
+ggsave("figures/presence_annual_temp.png", plot = last_plot(), width = 12, height =9, dpi = 300)
+
+# MEAN SPRING (MAY TO JUNE) ----------------------------------------------------
+mean_spring_temp <- temp_data %>%
+# keep only spring months (May to June)
+  filter(month(t) %in% 5:6) %>%
+  mutate(
+    year = year(t),              # extract year
+    month = month(t)             # extract month number (1–12)
+    # month = month(t, label=TRUE)  # use this for "Jan", "Feb", etc.
+  ) %>%
+  group_by(year, month, region) %>%
+  summarise(
+    mean_spring_temp = mean(avg_temp, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+kelp_mean_spring_temp <- kelp_presence_summary %>%  # your yearly percent presence data
+  left_join(mean_spring_temp, by = c("year", "region"))
+
+# look at what it looks like
+ggplot(kelp_mean_spring_temp, aes(x = mean_spring_temp, y = percent, colour = region)) +
+  geom_point() +
+  geom_line() +
+  theme_classic() +
+  labs(
+    x = "Mean Spring Temperature (°C)",
+    y = "Percent Kelp Presence") +
+  scale_color_manual(name = "Region",
+                     values = c("Dynamic" = "blue", "Inlet" = "red")) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10))
+
+ggsave("figures/presnce_spring_temp.png", plot = last_plot(), width = 12, height =9, dpi = 300)
+
+# MEAN SUMMER (JULY TO AUGUST) -------------------------------------------------
+mean_summer_temp <- temp_data %>%
+  # keep only summer months (May to June)
+  filter(month(t) %in% 7:8) %>%
+  mutate(
+    year = year(t),              # extract year
+    month = month(t)             # extract month number (1–12)
+    # month = month(t, label=TRUE)  # use this for "Jan", "Feb", etc.
+  ) %>%
+  group_by(year, month, region) %>%
+  summarise(
+    mean_summer_temp = mean(avg_temp, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+kelp_mean_summer_temp <- kelp_presence_summary %>%  # your yearly percent presence data
+  left_join(mean_summer_temp, by = c("year", "region")) %>% 
+  drop_na(mean_summer_temp)
+
+# look at what it looks like
+ggplot(kelp_mean_summer_temp, aes(x = mean_summer_temp, y = percent, colour = region)) +
+  geom_point() +
+  geom_line() +
+  theme_classic() +
+  labs(
+    x = "Mean Summer Temperature (°C)",
+    y = "Percent Kelp Presence") +
+  scale_color_manual(name = "Region",
+                     values = c("Dynamic" = "blue", "Inlet" = "red")) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10))
+
+ggsave("figures/presnce_summer_temp.png", plot = last_plot(), width = 12, height =9, dpi = 300)
