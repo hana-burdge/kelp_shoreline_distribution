@@ -880,16 +880,24 @@ ggplot(kelp_presence_scaled, aes(x = max_temp, y = percent, color = region, fill
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.2, color = NA) +  # CI shaded
   theme_classic() +
   labs(
-    x = "Maximum Temperature (°C)",
-    y = "Percent Kelp Presence",
+    x = "Maximum Annual Temperature (°C)",
+    y = "Kelp Presence (%)",
     color = "Region",
     fill = "Region"
   ) +
   scale_color_manual(values = c("Dynamic" = "blue", "Inlet" = "red")) +
   scale_fill_manual(values = c("Dynamic" = "blue", "Inlet" = "red")) +
-  scale_y_continuous(breaks = scales::pretty_breaks(n = 10))
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
+  theme(
+    axis.title.x = element_text(size = 16),  # x-axis label
+    axis.title.y = element_text(size = 16),  # y-axis label
+    axis.text.x  = element_text(size = 14),  # x-axis tick labels
+    axis.text.y  = element_text(size = 14),   # y-axis tick labels
+    legend.title = element_text(size = 16),  # legend title font size
+    legend.text = element_text(size = 14)    # legend item font size
+  )
 
-ggsave("figures/lm_presnce_temp.png", plot = last_plot(), width = 12, height =9, dpi = 300)
+ggsave("figures/lm_presence_temp.png", plot = last_plot(), width = 9, height = 6, dpi = 300)
 
 # ------------------------------------------------------------------------------
 
@@ -1025,22 +1033,31 @@ kelp_spring_scaled <- kelp_spring_scaled %>%
   )
 
 # Plot with model 
-ggplot(kelp_spring_scaled, aes(x = mean_spring_temp, y = percent, color = region, fill = region)) +
+spring_kelp_plot <- ggplot(kelp_spring_scaled, aes(x = mean_spring_temp, y = percent, color = region, fill = region)) +
   geom_point(size = 3) +  # actual data
   geom_line(aes(y = fit), size = 1) +  # regression line
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.2, color = NA) +  # CI shaded
   theme_classic() +
   labs(
     x = "Mean Spring Temperature (°C)",
-    y = "Percent Kelp Presence",
+    y = "Kelp Presence (%)",
     color = "Region",
     fill = "Region"
   ) +
   scale_color_manual(values = c("Dynamic" = "blue", "Inlet" = "red")) +
   scale_fill_manual(values = c("Dynamic" = "blue", "Inlet" = "red")) +
-  scale_y_continuous(breaks = scales::pretty_breaks(n = 10))
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
+  theme(
+    axis.title.x = element_text(size = 16),  # x-axis label
+    axis.title.y = element_text(size = 16),  # y-axis label
+    axis.text.x  = element_text(size = 14),  # x-axis tick labels
+    axis.text.y  = element_text(size = 14),   # y-axis tick labels
+    legend.title = element_text(size = 16),  # legend title font size
+    legend.text = element_text(size = 14)    # legend item font size
+  )
 
-ggsave("figures/lm_spring_temp.png", plot = last_plot(), width = 12, height =9, dpi = 300)
+
+ggsave("figures/lm_spring_temp.png", plot = last_plot(), width = 9, height = 6, dpi = 300)
 
 # SUMMER -----------------------------------------------------------------------
 # Scale only the predictor
@@ -1072,22 +1089,54 @@ kelp_summer_scaled <- kelp_summer_scaled %>%
   )
 
 # Plot with model 
-ggplot(kelp_summer_scaled, aes(x = mean_summer_temp, y = percent, color = region, fill = region)) +
+summer_kelp_plot <- ggplot(kelp_summer_scaled, aes(x = mean_summer_temp, y = percent, color = region, fill = region)) +
   geom_point(size = 3) +  # actual data
   geom_line(aes(y = fit), size = 1) +  # regression line
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.2, color = NA) +  # CI shaded
   theme_classic() +
   labs(
-    x = "Mean summer Temperature (°C)",
-    y = "Percent Kelp Presence",
+    x = "Mean Summer Temperature (°C)",
+    y = "Kelp Presence (%)",
     color = "Region",
     fill = "Region"
   ) +
   scale_color_manual(values = c("Dynamic" = "blue", "Inlet" = "red")) +
   scale_fill_manual(values = c("Dynamic" = "blue", "Inlet" = "red")) +
-  scale_y_continuous(breaks = scales::pretty_breaks(n = 10))
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
+  theme(
+    axis.title.x = element_text(size = 16),  # x-axis label
+    axis.title.y = element_text(size = 16),  # y-axis label
+    axis.text.x  = element_text(size = 14),  # x-axis tick labels
+    axis.text.y  = element_text(size = 14),   # y-axis tick labels
+    legend.title = element_text(size = 16),  # legend title font size
+    legend.text = element_text(size = 14)    # legend item font size
+  )
 
-ggsave("figures/lm_summer_temp.png", plot = last_plot(), width = 12, height =9, dpi = 300)
+ggsave("figures/lm_summer_temp.png", plot = last_plot(), width = 9, height = 6, dpi = 300)
+
+
+
+# Remove y axis and move right plot slightly to the right
+summer_kelp_plot_no_y <- summer_kelp_plot +
+  theme(
+    axis.title.y = element_blank(),
+    axis.text.y  = element_blank(),
+    axis.ticks.y = element_blank(),
+    plot.margin = unit(c(0, 0, 0.3, 2), "lines")  # top, right, bottom, left
+  )
+
+# Combine plots
+ggarrange(
+  spring_kelp_plot,
+  summer_kelp_plot_no_y,
+  ncol = 2,
+  nrow = 1,
+  common.legend = TRUE,
+  legend = "right",
+  labels = c("A", "B") 
+)
+
+ggsave("figures/lm_spring_summer.png", plot = last_plot(), width = 14, height = 6, dpi = 300)
 
 ### SPRING VS SUMMER MODELS ###
 kelp_spring_scaled <- kelp_spring_scaled %>%
