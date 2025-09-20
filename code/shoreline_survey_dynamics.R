@@ -724,7 +724,7 @@ ggsave("figures/gain_loss_percet.png", plot = gain_loss_percent, width = 6, heig
 
 #-------------------------------------------------------------------------------
 
-# LOOKING AT DYNAMICS AND TEMP
+# LOOKING AT DYNAMICS AND MAX ANNUAL TEMP
 
 #-------------------------------------------------------------------------------
 
@@ -873,7 +873,7 @@ kelp_presence_scaled <- kelp_presence_scaled %>%
     upr = predict(lm_scaled, newdata = kelp_presence_scaled, interval = "confidence")[, "upr"]
   )
 
-# Plot with CI
+# Plot with model 
 ggplot(kelp_presence_scaled, aes(x = max_temp, y = percent, color = region, fill = region)) +
   geom_point(size = 3) +  # actual data
   geom_line(aes(y = fit), size = 1) +  # regression line
@@ -893,7 +893,7 @@ ggsave("figures/lm_presnce_temp.png", plot = last_plot(), width = 12, height =9,
 
 # ------------------------------------------------------------------------------
 
-# NOW LOOK AT KELP PRESENCE AN MEAN ANNUAL TEMP, SUMMER, AND SPRING TEMPS
+# NOW LOOK AT KELP PRESENCE AND MEAN ANNUAL TEMP, SUMMER, AND SPRING TEMPS
 
 # ------------------------------------------------------------------------------
 
@@ -939,7 +939,8 @@ mean_spring_temp <- temp_data %>%
   )
 
 kelp_mean_spring_temp <- kelp_presence_summary %>%  # your yearly percent presence data
-  left_join(mean_spring_temp, by = c("year", "region"))
+  left_join(mean_spring_temp, by = c("year", "region")) %>% 
+  drop_na(mean_spring_temp)
 
 # look at what it looks like
 ggplot(kelp_mean_spring_temp, aes(x = mean_spring_temp, y = percent, colour = region)) +
@@ -953,7 +954,7 @@ ggplot(kelp_mean_spring_temp, aes(x = mean_spring_temp, y = percent, colour = re
                      values = c("Dynamic" = "blue", "Inlet" = "red")) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10))
 
-ggsave("figures/presnce_spring_temp.png", plot = last_plot(), width = 12, height =9, dpi = 300)
+ggsave("figures/presence_spring_temp.png", plot = last_plot(), width = 12, height =9, dpi = 300)
 
 # MEAN SUMMER (JULY TO AUGUST) -------------------------------------------------
 mean_summer_temp <- temp_data %>%
@@ -987,3 +988,136 @@ ggplot(kelp_mean_summer_temp, aes(x = mean_summer_temp, y = percent, colour = re
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10))
 
 ggsave("figures/presnce_summer_temp.png", plot = last_plot(), width = 12, height =9, dpi = 300)
+
+# ------------------------------------------------------------------------------
+
+# MODEL PRESENCE WITH MEAN ANNUAL TEMP, SUMMER, AND SPRING TEMPS
+
+# ------------------------------------------------------------------------------
+
+# SPRING -----------------------------------------------------------------------
+# Scale only the predictor
+kelp_spring_scaled <- kelp_mean_spring_temp %>%
+  mutate(mean_spring_temp_scaled = scale(mean_spring_temp))
+
+# Fit the linear model using scaled temperature but original percent
+lm_spring_scaled <- lm(percent ~ mean_spring_temp_scaled * region, data = kelp_spring_scaled)
+summary(lm_spring_scaled)
+
+# checking for normally distributed residuals with hist
+lm_spring_scaled$lm_spring_scaled_resids <-resid(lm_spring_scaled) 
+
+hist(lm_spring_scaled$lm_spring_scaled_resids) 
+
+# look again with QQ Plot
+qqPlot(lm_spring_scaled$lm_spring_scaled_resids) 
+
+# checking for relationships between residuals and predictors
+residualPlot(lm_spring_scaled, tests = FALSE) 
+
+# Generate predictions with confidence intervals
+kelp_spring_scaled <- kelp_spring_scaled %>%
+  # predict with interval = "confidence"
+  mutate(
+    fit = predict(lm_spring_scaled, newdata = kelp_spring_scaled, interval = "confidence")[, "fit"],
+    lwr = predict(lm_spring_scaled, newdata = kelp_spring_scaled, interval = "confidence")[, "lwr"],
+    upr = predict(lm_spring_scaled, newdata = kelp_spring_scaled, interval = "confidence")[, "upr"]
+  )
+
+# Plot with model 
+ggplot(kelp_spring_scaled, aes(x = mean_spring_temp, y = percent, color = region, fill = region)) +
+  geom_point(size = 3) +  # actual data
+  geom_line(aes(y = fit), size = 1) +  # regression line
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.2, color = NA) +  # CI shaded
+  theme_classic() +
+  labs(
+    x = "Mean Spring Temperature (°C)",
+    y = "Percent Kelp Presence",
+    color = "Region",
+    fill = "Region"
+  ) +
+  scale_color_manual(values = c("Dynamic" = "blue", "Inlet" = "red")) +
+  scale_fill_manual(values = c("Dynamic" = "blue", "Inlet" = "red")) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10))
+
+ggsave("figures/lm_spring_temp.png", plot = last_plot(), width = 12, height =9, dpi = 300)
+
+# SUMMER -----------------------------------------------------------------------
+# Scale only the predictor
+kelp_summer_scaled <- kelp_mean_summer_temp %>%
+  mutate(mean_summer_temp_scaled = scale(mean_summer_temp))
+
+# Fit the linear model using scaled temperature but original percent
+lm_summer_scaled <- lm(percent ~ mean_summer_temp_scaled * region, data = kelp_summer_scaled)
+summary(lm_summer_scaled)
+
+# checking for normally distributed residuals with hist
+lm_summer_scaled$lm_summer_scaled_resids <-resid(lm_summer_scaled) 
+
+hist(lm_summer_scaled$lm_summer_scaled_resids) 
+
+# look again with QQ Plot
+qqPlot(lm_summer_scaled$lm_summer_scaled_resids) 
+
+# checking for relationships between residuals and predictors
+residualPlot(lm_summer_scaled, tests = FALSE) 
+
+# Generate predictions with confidence intervals
+kelp_summer_scaled <- kelp_summer_scaled %>%
+  # predict with interval = "confidence"
+  mutate(
+    fit = predict(lm_summer_scaled, newdata = kelp_summer_scaled, interval = "confidence")[, "fit"],
+    lwr = predict(lm_summer_scaled, newdata = kelp_summer_scaled, interval = "confidence")[, "lwr"],
+    upr = predict(lm_summer_scaled, newdata = kelp_summer_scaled, interval = "confidence")[, "upr"]
+  )
+
+# Plot with model 
+ggplot(kelp_summer_scaled, aes(x = mean_summer_temp, y = percent, color = region, fill = region)) +
+  geom_point(size = 3) +  # actual data
+  geom_line(aes(y = fit), size = 1) +  # regression line
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.2, color = NA) +  # CI shaded
+  theme_classic() +
+  labs(
+    x = "Mean summer Temperature (°C)",
+    y = "Percent Kelp Presence",
+    color = "Region",
+    fill = "Region"
+  ) +
+  scale_color_manual(values = c("Dynamic" = "blue", "Inlet" = "red")) +
+  scale_fill_manual(values = c("Dynamic" = "blue", "Inlet" = "red")) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10))
+
+ggsave("figures/lm_summer_temp.png", plot = last_plot(), width = 12, height =9, dpi = 300)
+
+### SPRING VS SUMMER MODELS ###
+kelp_spring_scaled <- kelp_spring_scaled %>%
+  mutate(
+    fit = predict(lm_spring_scaled, newdata = ., interval = "confidence")[, "fit"],
+    lwr = predict(lm_spring_scaled, newdata = ., interval = "confidence")[, "lwr"],
+    upr = predict(lm_spring_scaled, newdata = ., interval = "confidence")[, "upr"],
+    season = "Spring"
+  ) %>%
+  rename(temp_scaled = mean_spring_temp_scaled)
+
+kelp_summer_scaled <- kelp_summer_scaled %>%
+  mutate(
+    fit = predict(lm_summer_scaled, newdata = ., interval = "confidence")[, "fit"],
+    lwr = predict(lm_summer_scaled, newdata = ., interval = "confidence")[, "lwr"],
+    upr = predict(lm_summer_scaled, newdata = ., interval = "confidence")[, "upr"],
+    season = "Summer"
+  ) %>%
+  rename(temp_scaled = mean_summer_temp_scaled)
+
+# Combine
+kelp_both <- bind_rows(kelp_spring_scaled, kelp_summer_scaled)
+
+# Plot
+ggplot(kelp_both, aes(x = temp_scaled, y = percent, color = region)) +
+  geom_point() +
+  geom_line(aes(y = fit)) +
+  geom_ribbon(aes(ymin = lwr, ymax = upr, fill = region), alpha = 0.2, color = NA) +
+  facet_wrap(~season) +
+  labs(x = "Scaled Temperature", y = "Kelp Percent Presence") +
+  theme_classic() +
+  scale_color_manual(values = c("Dynamic" = "blue", "Inlet" = "red")) +
+  scale_fill_manual(values = c("Dynamic" = "blue", "Inlet" = "red")) 
