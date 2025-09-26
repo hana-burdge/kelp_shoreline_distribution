@@ -30,12 +30,33 @@ library(leaflet)
 
 logger_locations <- read_csv("data/logger_locations.csv")
 
-logger_locations <- logger_locations %>% 
-  mutate(region = case_when(
-    site_id %in% c("SC3", "SC4", "BATI12 (BATI14)", "BATI3", "BATI2") ~ "Dynamic",
-    site_id %in% c("SC17", "SC18", "SC1", "BATI5", "SC2", "SC9", "BATI9", "SC10", "SC20", 
-                   "SC7", "SC21", "SC6", "SC5", "BATI29", "SC11") ~ "Inlet"
+logger_locations <- logger_locations %>%
+  mutate(site_id = case_when(
+    site_id == "BATI12 (BATI14)" ~ "BATI12",
+    TRUE ~ site_id
   ))
+
+logger_locations <- logger_locations %>% 
+  filter(!site_id %in% c("SC5", "SC6", "SC21", "SC7", "SC20", "BATI29", "SC11", "BATI2")) %>% 
+  mutate(region = case_when(
+    site_id %in% c("SC3", "SC18", "SC17") ~ "1",
+    site_id %in% c("SC4", "BATI12", "BATI3") ~ "2",
+    site_id %in% c("SC1", "SC2", "BATI5") ~ "3",
+    site_id %in% c("SC9", "BATI9", "SC10") ~ "4"
+  )) 
+
+# Set colours for regions to use in the rest of plots 
+region_cols <- c(
+  "1" = "#66B2FF",  # bright pastel blue
+  "2" = "#FF6666",  # bright pastel red
+  "3" = "lightgreen",  # bright pastel green
+  "4" = "#FFB266"   # bright pastel orange
+)
+
+pal <- colorFactor(
+  palette = region_cols,
+  domain = logger_locations$region  # must match your data column
+)
 
 library(leaflet)
 library(dplyr)
@@ -44,49 +65,36 @@ library(dplyr)
 top_labels <- logger_locations %>% filter(site_id != "BATI5")
 bottom_label <- logger_locations %>% filter(site_id == "BATI5")
 
-# Create a color palette for the 'region' column
-pal <- colorFactor(
-  palette = c("blue", "red"),   # choose colors for your regions
-  domain = logger_locations$region
-)
-
-# Create map
+# Plot map
 logger_locations_map <- leaflet(logger_locations) %>%
-  addTiles() %>%  # default base map
+  addTiles() %>%
   addProviderTiles("CartoDB.Positron") %>% 
   addCircleMarkers(
-    ~lon, ~lat,        
-    radius = 2,                  
-    color = ~pal(region),       # color by region
-  ) %>% 
-  # Labels for most points (on top)
+    ~lon, ~lat,
+    radius = 3,
+    color = ~pal(region),  # use palette function
+    fillOpacity = 0.6
+  ) %>%
   addLabelOnlyMarkers(
     data = top_labels,
     ~lon, ~lat,
     label = ~site_id,
     labelOptions = labelOptions(
-      noHide = TRUE,             
-      direction = "top",         
-      textOnly = TRUE,           
-      style = list(
-        "color" = "black",
-        "font-size" = "11px",
-        "padding" = "2px")
+      noHide = TRUE,
+      direction = "top",
+      textOnly = TRUE,
+      style = list("color" = "black", "font-size" = "14px", "padding" = "2px")
     )
   ) %>%
-  # Label for BATI5 (underneath)
   addLabelOnlyMarkers(
     data = bottom_label,
     ~lon, ~lat,
     label = ~site_id,
     labelOptions = labelOptions(
-      noHide = TRUE,             
-      direction = "bottom",      # below the point
-      textOnly = TRUE,           
-      style = list(
-        "color" = "black",
-        "font-size" = "11px",
-        "padding" = "2px")
+      noHide = TRUE,
+      direction = "bottom",
+      textOnly = TRUE,
+      style = list("color" = "black", "font-size" = "14px", "padding" = "2px")
     )
   ) %>%
   addLegend(
@@ -95,13 +103,12 @@ logger_locations_map <- leaflet(logger_locations) %>%
     values = ~region,
     title = "Region"
   )
-
 # Show map
 logger_locations_map
 
 
 
-mapshot(logger_locations_map, file = "figures/logger_locations_map.png", vwidth = 840, vheight = 400, zoom = 10)
+mapshot(logger_locations_map, file = "figures/logger_locations_map.png", vwidth = 845, vheight = 390, zoom = 10)
 
 ################################################################################
 
@@ -139,7 +146,7 @@ get_dn <- function(dat, ylim) {
   )
   dn$ymax[(dn$t %in% day)] <- ylim[1] - 2
 
-  dn
+dn
 }
 
 # BEGIN HERE
@@ -215,132 +222,132 @@ dat_final <- dat %>%
 # FUNCTION FOR PLOTTING TIDES WITH TEMP
 
 # PLOT ----
-W <- unit(33.87, "cm") / 3
-H <- unit(19.05, "cm") / 3
+#W <- unit(33.87, "cm") / 3
+#H <- unit(19.05, "cm") / 3
 
 # Create a function to make plotting easier 
 #plot_env_tides <- function(
-    logger,
-    T10 = NULL, T11 = NULL,
-    T20 = NULL, T21 = NULL,
-    wh = 25, DN = TRUE,
-    fn = NULL, Wmult = 0.5, Hmult = 0.9
-) 
-  {
+    #logger,
+    #T10 = NULL, T11 = NULL,
+    ##T20 = NULL, T21 = NULL,
+    #wh = 25, DN = TRUE,
+    #fn = NULL, Wmult = 0.5, Hmult = 0.9
+#) 
+#  {
   #filters final df for only rows specific to logger that you want to plot
-  dat_final_used <- filter(dat_final, sh == logger)
+  #dat_final_used <- filter(dat_final, sh == logger)
   
   # to define the start and end times of the plot 
-  t10 <- if (is.null(T10)) min(dat_final$t) else as.POSIXct(T10)
-  t11 <- if (is.null(T11)) max(dat_final$t) else as.POSIXct(T11)
-  detail <- !any(is.null(T20), is.null(T21))
-  if (detail) {
-    t20 <- as.POSIXct(T20)
-    t21 <- as.POSIXct(T21)
-  }
+  #t10 <- if (is.null(T10)) min(dat_final$t) else as.POSIXct(T10)
+  #t11 <- if (is.null(T11)) max(dat_final$t) else as.POSIXct(T11)
+  #detail <- !any(is.null(T20), is.null(T21))
+  #if (detail) {
+    #t20 <- as.POSIXct(T20)
+    #t21 <- as.POSIXct(T21)
+#  }
   
-  print(dat_final_used$t %>% range())
+#  print(dat_final_used$t %>% range())
   
   # Keeps only rows in the timeframe that wants to be plotted 
-  dat_final_used <- filter(dat_final_used, between(t, t10, t11))
+#  dat_final_used <- filter(dat_final_used, between(t, t10, t11))
   
   # define x and y limits 
-  if (detail) xlim <- c(as.POSIXct(t20), as.POSIXct(t21))
-  ylim <- range(dat_final_used$temp)
+#  if (detail) xlim <- c(as.POSIXct(t20), as.POSIXct(t21))
+#  ylim <- range(dat_final_used$temp)
   
   # now safe to call get_dn - for tide envelopes 
-  dn   <- get_dn(dat_final_used, ylim)
-  ylim <- dn %>% select(-t) %>% unlist() %>% range()
+#  dn   <- get_dn(dat_final_used, ylim)
+#  ylim <- dn %>% select(-t) %>% unlist() %>% range()
   
   # main plot 
-  p1 <- ggplot(dat_final_used)
+#  p1 <- ggplot(dat_final_used)
 
-  if (detail) {
-    p1 <- p1 +
-      annotate(
-        geom = "rect",
-        xmin = xlim[1], xmax = xlim[2],
-        ymin = ylim[1], ymax = ylim[2],
-        col = "grey20", fill = NA, linewidth = 0.25
-      )
-  }
+#  if (detail) {
+#    p1 <- p1 +
+#      annotate(
+#        geom = "rect",
+#        xmin = xlim[1], xmax = xlim[2],
+#        ymin = ylim[1], ymax = ylim[2],
+#        col = "grey20", fill = NA, linewidth = 0.25
+#      )
+#  }
 
   # add main line plot - this is temp here 
-  p1 <- p1 +
-    geom_line(aes(t, temp), col = "grey10") +
-    scale_x_datetime(expand = c(0,0), labels = label_date_short()) +
-    theme_bw() +
-    theme(
-      axis.title         = element_blank(),
-      panel.grid.major.x = element_blank(),
-      plot.margin        = unit(rep(0.5, 4), "cm"),
-      strip.background   = element_blank(),
-      strip.text         = element_blank()
-    ) +
-    ylim(ylim)
+#  p1 <- p1 +
+#    geom_line(aes(t, temp), col = "grey10") +
+#    scale_x_datetime(expand = c(0,0), labels = label_date_short()) +
+#    theme_bw() +
+#    theme(
+#      axis.title         = element_blank(),
+#      panel.grid.major.x = element_blank(),
+#      plot.margin        = unit(rep(0.5, 4), "cm"),
+#      strip.background   = element_blank(),
+#      strip.text         = element_blank()
+#    ) +
+#    ylim(ylim)
 
-  if (detail) {
-    p2 <- dat_final_used %>%
-      filter(between(t, t20, t21)) %>%
-      ggplot()
+#  if (detail) {
+#    p2 <- dat_final_used %>%
+#      filter(between(t, t20, t21)) %>%
+#      ggplot()
 
-    if (DN) {
-      p2 <- p2 +
-        geom_ribbon(
-          data = dn,
-          mapping = aes(x = t, ymin = ymin, ymax = ymax),
-          inherit.aes = FALSE,
-          fill = "grey90", 
-          show.legend = FALSE
-        )
-    }
+#    if (DN) {
+#      p2 <- p2 +
+#        geom_ribbon(
+#          data = dn,
+#          mapping = aes(x = t, ymin = ymin, ymax = ymax),
+#          inherit.aes = FALSE,
+#          fill = "grey90", 
+#          show.legend = FALSE
+#        )
+#    }
 
-    dat_final_used <- dat_final_used %>%
-      mutate(h_rescaled = scales::rescale(h, to = c(ylim[1] + 1, ylim[1] + wh)))
+#    dat_final_used <- dat_final_used %>%
+#      mutate(h_rescaled = scales::rescale(h, to = c(ylim[1] + 1, ylim[1] + wh)))
     
-    p2 <- p2 +
-      geom_ribbon(
-        aes(t, ymin = ylim[1], ymax = h_rescaled),
-        fill = "steelblue1", alpha = 0.5
-      ) +
-      geom_line(aes(t, temp), col = "grey10") +
-      scale_x_datetime(limits = c(t20, t21), labels = label_date_short()) +
-      theme_bw() +
-      theme(
-        panel.grid.major.x = element_blank(),
-        strip.background = element_blank(),
-        strip.text   = element_blank(),
-        axis.title   = element_blank(),
-        plot.margin  = unit(rep(0.5, 4), "cm")
-      ) +
-      ylim(ylim) +
-      coord_cartesian(expand = FALSE)
-  }
+#    p2 <- p2 +
+#      geom_ribbon(
+#        aes(t, ymin = ylim[1], ymax = h_rescaled),
+#        fill = "steelblue1", alpha = 0.5
+#      ) +
+#      geom_line(aes(t, temp), col = "grey10") +
+#      scale_x_datetime(limits = c(t20, t21), labels = label_date_short()) +
+#      theme_bw() +
+#      theme(
+#      panel.grid.major.x = element_blank(),
+#      strip.background = element_blank(),
+#        strip.text   = element_blank(),
+#        axis.title   = element_blank(),
+#        plot.margin  = unit(rep(0.5, 4), "cm")
+#      ) +
+#      ylim(ylim) +
+#      coord_cartesian(expand = FALSE)
+#  }
 
-  p <- p1
-  if (detail) p <- p1 / p2
+#  p <- p1
+#  if (detail) p <- p1 / p2
   #p <- p + plot_layout(ncol = 1)
 
-  if (!is.null(fn)) {
-    ggsave(
-      file  = str_c(logger, "_", fn, ".pdf"),
-      plot  = p,
-      width = W * Wmult, height = H * Hmult)
-  }
+#  if (!is.null(fn)) {
+#    ggsave(
+#      file  = str_c(logger, "_", fn, ".pdf"),
+#      plot  = p,
+#      width = W * Wmult, height = H * Hmult)
+#  }
 
-  print(p)
-}
+#  print(p)
+#}
 
 ## plots ----
-plot_env_tides(
-  logger = "bati3",
-  T20 = "2023-07-01", T21 = "2023-07-15",
-  fn = "1")
+#plot_env_tides(
+#  logger = "bati3",
+#  T20 = "2023-07-01", T21 = "2023-07-15",
+#  fn = "1")
 
-plot_env_tides(
-  logger = "bati3",
-  T20 = "2024-01-06", T21 = "2024-01-23",
-  fn = "2")
+#plot_env_tides(
+#  logger = "bati3",
+#  T20 = "2024-01-06", T21 = "2024-01-23",
+#  fn = "2")
 
 
 
@@ -353,19 +360,27 @@ all_data <- select(dat_final, id, t, temp, h, lo, hi)
 # all data for a given id and only during high tide
 all_data_high_tide <- filter(all_data, hi)
 
+# look at what the data looks like
+ggplot(all_data_high_tide, aes(x = t, y = temp, colour = id)) +
+  geom_line() +
+  facet_wrap(~ id, scales = "free_y", ncol = 2)  # SC3 looks a little weird 
+
+# Need to make sure temp line is not drawn if logger is missed one year 
 # assigning stations to region and averaging across
 all_data_high_tide_region_avg <- all_data_high_tide %>% 
+  filter(!id %in% c("sc5", "sc6", "sc21", "sc7", "sc20", "bati29", "sc11")) %>% 
   mutate(region = case_when(
-    id %in% c("sc3", "sc4", "bati12", "bati3") ~ "Dynamic",
-    id %in% c("sc17", "sc18", "sc1", "sc2", "bati5", "bati9", "sc9", "sc10", "sc20", "sc7", 
-              "sc21", "sc6", "sc5", "bati29", "sc11") ~ "Inlet"
+    id %in% c("sc3", "sc18", "sc17") ~ "1",
+    id %in% c("sc4", "bati12", "bati3") ~ "2",
+    id %in% c("sc1", "sc2", "bati5") ~ "3",
+    id %in% c("sc9", "bati9", "sc10") ~ "4"
   )) %>% 
   group_by(region, t) %>% 
-  summarise(avg_temp = mean(temp, na.rm = TRUE))
+  summarise(avg_temp = mean(temp, na.rm = TRUE)) 
 
 # plotting temperature by region
 library(scales)  # for date formatting
-ggplot(all_data_high_tide_region_avg) +
+temp_time_facet <- ggplot(all_data_high_tide_region_avg) +
   geom_line(aes(t, avg_temp)) +
   facet_wrap(~ region, scales = "free_y", ncol = 1) +
   scale_x_datetime(
@@ -374,35 +389,51 @@ ggplot(all_data_high_tide_region_avg) +
   ) +
   labs(
     x = "",                 # x-axis label
-    y = "Average Temperature (°C)"  # y-axis label
+    y = "Mean Temperature (°C)"  # y-axis label
   ) +
   theme_bw() +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1)  # rotate labels to avoid overlap
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 14),   # rotate labels to avoid overlap
+        axis.title.x = element_text(size = 16),  # x-axis label
+        axis.title.y = element_text(size = 16),  # y-axis label
+        axis.text.y  = element_text(size = 14),   # y-axis tick labels
+        legend.title = element_text(size = 16),  # legend title font size
+        legend.text = element_text(size = 14),    # legend item font size
+        strip.text = element_text(size = 16) 
   )
 
-ggsave("figures/temp_region_plot_facet.png", plot = last_plot(), width = 20, height = 12, dpi = 300)
+
+temp_time_facet
+
+ggsave("figures/temp_region_plot_facet.png", plot = temp_time_facet, width = 12, height = 8, dpi = 300)
 
 # plotting it a bit differently 
-ggplot(all_data_high_tide_region_avg, aes(x = t, y = avg_temp, colour = region)) +
-  geom_line() +
+library(RColorBrewer)
+temp_time_colour <- ggplot(all_data_high_tide_region_avg, aes(x = t, y = avg_temp, colour = region)) +
+  geom_line(alpha = 0.9) +
   scale_x_datetime(
     date_labels = "%b %Y",      # label format: Month Year
     date_breaks = "1 month"     # place a tick every month
   ) +
-  scale_color_manual(name = "Region",
-                     values = c("Dynamic" = "blue", "Inlet" = "red")) +
+  scale_color_manual(name = "Region", values = brewer.pal(4, "Set3")) +
   labs(
     x = "",                 # x-axis label
-    y = "Average Temperature (°C)"  # y-axis label
+    y = "Mean Temperature (°C)"  # y-axis label
   ) +
-  theme_bw() +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1)  # rotate labels to avoid overlap
-  ) 
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 14),   # rotate labels to avoid overlap
+      axis.title.x = element_text(size = 16),  # x-axis label
+      axis.title.y = element_text(size = 16),  # y-axis label
+      axis.text.y  = element_text(size = 14),   # y-axis tick labels
+      legend.title = element_text(size = 16),  # legend title font size
+      legend.text = element_text(size = 14)    # legend item font size
+    )
 
+temp_time_colour
 
-ggsave("figures/temp_region_plot_colour.png", plot = last_plot(), width = 20, height = 12, dpi = 300)
+ggsave("figures/temp_region_plot_colour.png", plot = temp_time_colour, width = 14, height = 6, dpi = 300)
 
 
 

@@ -323,7 +323,7 @@ mapview(data_2025_coord, xcol = "x", ycol = "y",
                         "pink", "brown", "purple", "magenta"),  alpha = 0)
 
 # Kelp Report Segment Map Figure 
-# Example: assign colors explicitly to each Location
+# assign colors explicitly to each Location
 location_colors <- c(
   "Swanson" = "blue",
   "Crease" = "red",
@@ -369,7 +369,7 @@ segment_map_2025
 
 mapshot(segment_map_2025, file = "figures/segment_map_2025.png",vwidth = 700, vheight = 600, zoom = 10)
 
-#### Merge both years' dataset =======================
+#### Merge all years' datasets =======================
 colnames(data_2022_coordinatesXY)
 colnames(data_2022_coordinatesXY)[c(7:18)]<- paste(colnames(data_2022_coordinatesXY[,c(7:18)]), "2022", sep="_")
 
@@ -442,7 +442,7 @@ merged_data_22_23_24_25$kelp_dynamic <- recode(
 # Plotting Persistence vs Absence
 # filter your data
 persistent_subset_data <- merged_data_22_23_24_25 %>%
-  filter(kelp_dynamic %in% c("Persistent", "Absent"))
+  filter(kelp_dynamic %in% c("Persistent", "Absent")
 
 # plot only the filtered data
 persistent_map <- mapview(
@@ -628,38 +628,35 @@ library(dplyr)
 library(ggplot2)
 library(forcats)
 
-# Assign Locations to inlet or dynamic region
+# Assign Locations to regions
 region_summary <- merged_data_22_23_24_25 %>%
   filter(!Location %in% c("Hanson", "Midsummer")) %>% 
   mutate(merged_data_22_23_24_25, region = case_when(
-    Location %in% c("Gilford_Point", "Port_Elisabeth", "Turnour_North", "Turnour_South", 
-                    "Gwayasdums", "Crammer_South","Minstrel", "South_Bonwick", "Doctor") ~ "Inlet",
-    Location %in% c("Village", "Swanson", "Crease", "Gilford_LowerKnight", "South_Arrow") ~ "Dynamic"
+    Location %in% c("Crammer_South", "South_Arrow",  "Gwayasdums", "South_Bonwick") ~ "1",
+     Location %in% c("Swanson", "Crease", "Gilford_LowerKnight") ~ "2",
+      Location %in% c("Village", "Gilford_Point", "Port_Elisabeth", "Turnour_North", "Turnour_South") ~ "3",
+        Location %in% c("Minstrel", "Doctor") ~ "4"
   ))
 
-region_summary <- merged_data_22_23_24_25 %>%
-  filter(!Location %in% c("Hanson", "Midsummer")) %>%
-  mutate(
-    region = case_when(
-      Location == "South_Bonwick" & Site <= 314 ~ "Inlet",
-      Location == "South_Bonwick" & Site >= 315 & Site <= 470 ~ "Dynamic",
-      Location %in% c("Gilford_Point", "Port_Elisabeth", "Turnour_North", "Turnour_South", 
-                      "Gwayasdums", "Crammer_South", "Minstrel", "Doctor") ~ "Inlet",
-      Location %in% c("Village", "Swanson", "Crease", "Gilford_LowerKnight", "South_Arrow") ~ "Dynamic"
-    ))
-
-
+region_cols <- c(
+  "1" = "#66B2FF",  # bright pastel blue
+  "2" = "#FF6666",  # bright pastel red
+  "3" = "lightgreen",  # bright pastel green
+  "4" = "#FFB266"   # bright pastel orange
+)
 # make rendered html self-contained
 mapviewOptions(fgb = FALSE)
 
-# Plotting a map for the 2 regions 
+# Plotting a map for the 4 regions 
 region_map <- mapview(
   region_summary,
   xcol = "x", ycol = "y",
   crs = 4269, grid = FALSE,
-  cex= 2, legend = TRUE, zcol = "region",
-  col.regions = c("blue", "red"),  alpha = 0,
-  layer.name = "Region")
+  cex = 2, legend = TRUE,
+  zcol = "region", alpha = 0,
+  col.regions = region_cols,
+  layer.name = "Region"
+)
 
 region_map
 
@@ -677,6 +674,7 @@ img5 <- image_annotate(img5, "B", size = 300, color = "black", gravity = "NorthW
 
 # Combine vertically
 combined <- image_append(c(img4, img5), stack = TRUE)
+
 
 # Save output
 image_write(combined, "figures/combined_region_logger_maps.png")
@@ -710,7 +708,7 @@ gain_loss_summary <- gain_loss_summary %>%
 gain_loss_percent <- ggplot(gain_loss_summary, aes(x = year, y = percent_signed, fill = region)) +
   geom_bar(stat = "identity", position = position_dodge(width = 0.9)) +
   geom_hline(yintercept = 0, color = "black", linetype = "dashed") +   # zero line
-  scale_fill_manual(values = c("Dynamic" = "blue", "Inlet" = "red")) + # custom colors
+  scale_fill_manual(values = c(region_cols)) + # custom colors
   labs(
     x = "Year",
     y = "Net Percentage of Segments",
@@ -801,7 +799,7 @@ ggplot(kelp_presence_temp, aes(x = max_temp, y = percent, colour = region)) +
     x = "Yearly Maximum Temperature (°C)",
     y = "Percent Kelp Presence") +
   scale_color_manual(name = "Region",
-                     values = c("Dynamic" = "blue", "Inlet" = "red")) +
+                     #values = c("Dynamic" = "blue", "Inlet" = "red")) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10))
 
 ggsave("figures/presence_temp.png", plot = last_plot(), width = 12, height = 9, dpi = 300)
@@ -1103,15 +1101,7 @@ summer_kelp_plot <- ggplot(kelp_summer_scaled, aes(x = mean_summer_temp, y = per
   scale_color_manual(values = c("Dynamic" = "blue", "Inlet" = "red")) +
   scale_fill_manual(values = c("Dynamic" = "blue", "Inlet" = "red")) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
-  theme(
-    axis.title.x = element_text(size = 16),  # x-axis label
-    axis.title.y = element_text(size = 16),  # y-axis label
-    axis.text.x  = element_text(size = 14),  # x-axis tick labels
-    axis.text.y  = element_text(size = 14),   # y-axis tick labels
-    legend.title = element_text(size = 16),  # legend title font size
-    legend.text = element_text(size = 14)    # legend item font size
-  )
-
+M
 ggsave("figures/lm_summer_temp.png", plot = last_plot(), width = 9, height = 6, dpi = 300)
 
 
@@ -1170,3 +1160,9 @@ ggplot(kelp_both, aes(x = temp_scaled, y = percent, color = region)) +
   theme_classic() +
   scale_color_manual(values = c("Dynamic" = "blue", "Inlet" = "red")) +
   scale_fill_manual(values = c("Dynamic" = "blue", "Inlet" = "red")) 
+
+# ------------------------------------------------------------------------------
+
+# LOOKING AT MEAN TEMPERATURES OVER TIME
+
+# ------------------------------------------------------------------------------
