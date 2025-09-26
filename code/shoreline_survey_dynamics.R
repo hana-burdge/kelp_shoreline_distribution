@@ -799,7 +799,7 @@ ggplot(kelp_presence_temp, aes(x = max_temp, y = percent, colour = region)) +
     x = "Yearly Maximum Temperature (°C)",
     y = "Percent Kelp Presence") +
   scale_color_manual(name = "Region",
-                     #values = c("Dynamic" = "blue", "Inlet" = "red")) +
+                     values = c(region_cols)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10))
 
 ggsave("figures/presence_temp.png", plot = last_plot(), width = 12, height = 9, dpi = 300)
