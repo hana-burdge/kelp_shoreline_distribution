@@ -348,11 +348,6 @@ data_2025_coord <- data_2025_coord %>%
 # make rendered html self-contained
 mapviewOptions(fgb = FALSE)
 
-mapviewOptions(viewBounds = list(
-  x = c(-126.76, -126.25),  # longitudes
-  y = c(50.54, 50.78)       # latitudes
-))
-
 segment_map_2025 <- mapview(
   data_2025_coord,
   xcol = "x", ycol = "y",
@@ -433,6 +428,46 @@ merged_data_22_23_24_25$kelp_dynamic <- recode(
   "15" = "Persistent"
 )
 
+merged_data_22_23_24_25 <- merged_data_22_23_24_25 %>%
+  mutate(
+    kelp_dynamic_label = case_when(
+      kelp_dynamic == 0 ~ "Absent",
+      
+      # 2023
+      kelp_dynamic == 1 & Year_2023 == 2023 ~ "Lost in 2023",
+      kelp_dynamic == 2 & Year_2023 == 2023 ~ "Gained in 2023",
+      kelp_dynamic == 5 & Year_2023 == 2023 ~ "Lost in 2023",
+      kelp_dynamic == 6 & Year_2023 == 2023 ~ "Gained in 2023",
+      kelp_dynamic == 9 & Year_2023 == 2023 ~ "Lost in 2023",
+      kelp_dynamic == 10 & Year_2023 == 2023 ~ "Gained in 2023",
+      kelp_dynamic == 14 & Year_2023 == 2023 ~ "Gained in 2023",
+      
+      # 2024
+      kelp_dynamic == 2 & Year_2024 == 2024 ~ "Lost in 2024",
+      kelp_dynamic == 3 & Year_2024 == 2024 ~ "Lost in 2024",
+      kelp_dynamic == 4 & Year_2024 == 2024 ~ "Gained in 2024",
+      kelp_dynamic == 5 & Year_2024 == 2024 ~ "Gained in 2024",
+      kelp_dynamic == 10 & Year_2024 == 2024 ~ "Lost in 2024",
+      kelp_dynamic == 11 & Year_2024 == 2024 ~ "Lost in 2024",
+      kelp_dynamic == 12 & Year_2024 == 2024 ~ "Gained in 2024",
+      kelp_dynamic == 13 & Year_2024 == 2024 ~ "Gained in 2024",
+      
+      # 2025
+      kelp_dynamic == 4 & Year_2025 == 2025 ~ "Lost in 2025",
+      kelp_dynamic == 5 & Year_2025 == 2025 ~ "Lost in 2025",
+      kelp_dynamic == 6 & Year_2025 == 2025 ~ "Lost in 2025",
+      kelp_dynamic == 7 & Year_2025 == 2025 ~ "Lost in 2025",
+      kelp_dynamic == 8 & Year_2025 == 2025 ~ "Gained in 2025",
+      kelp_dynamic == 9 & Year_2025 == 2025 ~ "Gained in 2025",
+      kelp_dynamic == 10 & Year_2025 == 2025 ~ "Gained in 2025",
+      kelp_dynamic == 11 & Year_2025 == 2025 ~ "Gained in 2025",
+      
+      # Persistent
+      kelp_dynamic == 15 ~ "Persistent",
+      
+      TRUE ~ as.character(kelp_dynamic)  # fallback
+    )
+  )
 
 #-------------------------------------------------------------------------------
 
@@ -442,7 +477,7 @@ merged_data_22_23_24_25$kelp_dynamic <- recode(
 # Plotting Persistence vs Absence
 # filter your data
 persistent_subset_data <- merged_data_22_23_24_25 %>%
-  filter(kelp_dynamic %in% c("Persistent", "Absent")
+  filter(kelp_dynamic_label %in% c("Persistent", "Absent"))
 
 # plot only the filtered data
 persistent_map <- mapview(
@@ -451,17 +486,14 @@ persistent_map <- mapview(
   crs = 4269,
   grid = FALSE,
   cex = 2,
-  zcol = "kelp_dynamic",
+  zcol = "kelp_dynamic_label",
   legend = TRUE,
-  col.regions = c("Absent" = "red", "Persistent" = "forestgreen"), # colors for these categories
+  col.regions = c("Absent" = "#64B5F6", "Persistent" ="#D2B48C" ), # colors for these categories
   alpha = 0.8,
   lwd = 0,
   col = NA,
   layer.name = "Kelp Dynamics"
 )
-# Set center and set zoom
-#persistent_map@map <- persistent_map@map %>%
-  #leaflet::setView(lng = -126.5, lat = 50.66, zoom = 11.2)
 
 persistent_map
 
@@ -475,7 +507,14 @@ mapshot(persistent_map, file = "figures/persistence_map.png", vwidth = 700, vhei
 # 2023 DYNAMICS-----------------------------------------------------------------
 # filter your data for dynamics in 2023
 gain_loss_23_subset <- merged_data_22_23_24_25 %>%
-  filter(kelp_dynamic %in% c("Gained in 2023", "Lost in 2023"))
+  filter(kelp_dynamic_label %in% c("Gained in 2023", 
+                                   "Lost in 2023", 
+                                   "Persistent", 
+                                   "Absent")) %>%
+  mutate(kelp_dynamic_label = factor(
+    kelp_dynamic_label,
+    levels = c("Gained in 2023", "Lost in 2023", "Persistent", "Absent")
+  ))
 
 # plot only the filtered data
 gain_loss_23_map <- mapview(
@@ -484,9 +523,9 @@ gain_loss_23_map <- mapview(
   crs = 4269,
   grid = FALSE,
   cex = 2,
-  zcol = "kelp_dynamic",
+  zcol = "kelp_dynamic_label",
   legend = TRUE,
-  col.regions = c("Gained in 2023" = "forestgreen", "Lost in 2023" = "red"), # colors for these categories
+  col.regions = c("Gained in 2023" = "forestgreen", "Lost in 2023" = "red", "Persistent"  = "steelblue", "Absent" = "tan"), # colors for these categories
   alpha = 0.2,
   lwd = 0,
   col = NA,
@@ -500,7 +539,14 @@ mapshot(gain_loss_23_map, file = "figures/gain_loss_23.png",vwidth = 700, vheigh
 # 2024 DYNAMICS-----------------------------------------------------------------
 # filter your data for dynamics in 2024
 gain_loss_24_subset <- merged_data_22_23_24_25 %>%
-  filter(kelp_dynamic %in% c("Gained in 2024", "Lost in 2024"))
+  filter(kelp_dynamic_label %in% c("Gained in 2024", 
+                                   "Lost in 2024", 
+                                   "Persistent", 
+                                   "Absent")) %>%
+  mutate(kelp_dynamic_label = factor(
+    kelp_dynamic_label,
+    levels = c("Gained in 2024", "Lost in 2024", "Persistent", "Absent")
+  ))
 
 # plot only the filtered data
 gain_loss_24_map <- mapview(
@@ -509,10 +555,9 @@ gain_loss_24_map <- mapview(
   crs = 4269,
   grid = FALSE,
   cex = 2,
-  zcol = "kelp_dynamic",
+  zcol = "kelp_dynamic_label",
   legend = TRUE,
-  col.regions = c("Gained in 2024" = "forestgreen", "Lost in 2024" = "red"), # colors for these categories
-  alpha = 0.2,
+  col.regions = c("Gained in 2024" = "forestgreen", "Lost in 2024" = "red", "Persistent"  = "steelblue", "Absent" = "tan"),  alpha = 0.2,
   lwd = 0,
   col = NA,
   layer.name = "Kelp Dynamics"
@@ -525,7 +570,14 @@ mapshot(gain_loss_24_map, file = "figures/gain_loss_24.png",vwidth = 700, vheigh
 # 2025 DYNAMICS-----------------------------------------------------------------
 # filter your data for dynamics in 2025
 gain_loss_25_subset <- merged_data_22_23_24_25 %>%
-  filter(kelp_dynamic %in% c("Gained in 2025", "Lost in 2025"))
+  filter(kelp_dynamic_label %in% c("Gained in 2025", 
+                                   "Lost in 2025", 
+                                   "Persistent", 
+                                   "Absent")) %>%
+  mutate(kelp_dynamic_label = factor(
+    kelp_dynamic_label,
+    levels = c("Gained in 2025", "Lost in 2025", "Persistent", "Absent")
+  ))
 
 # plot only the filtered data
 gain_loss_25_map <- mapview(
@@ -534,10 +586,9 @@ gain_loss_25_map <- mapview(
   crs = 4269,
   grid = FALSE,
   cex = 2,
-  zcol = "kelp_dynamic",
+  zcol = "kelp_dynamic_label",
   legend = TRUE,
-  col.regions = c("Gained in 2025" = "forestgreen", "Lost in 2025" = "red"), # colors for these categories
-  alpha = 0.2,
+  col.regions = c("Gained in 2025" = "forestgreen", "Lost in 2025" = "red", "Persistent"  = "steelblue", "Absent" = "tan"),  alpha = 0.2, 
   lwd = 0,
   col = NA,
   layer.name = "Kelp Dynamics"
@@ -683,25 +734,25 @@ image_write(combined, "figures/combined_region_logger_maps.png")
 # Gain and Loss Percent --------------------------------------------------------
 # filter for gain and loss and calculate %
 gain_loss_summary <- region_summary %>%
-  filter(kelp_dynamic %in% c("Gained in 2025", "Gained in 2024", "Gained in 2023",
+  filter(kelp_dynamic_label %in% c("Gained in 2025", "Gained in 2024", "Gained in 2023",
                              "Lost in 2025", "Lost in 2024", "Lost in 2023")) %>%                    
-  group_by(region, kelp_dynamic) %>%
+  group_by(region, kelp_dynamic_label) %>%
   summarise(count = n(), .groups = "drop") %>%
   group_by(region) %>%
   mutate(total = sum(count),
          percent = (count / total) * 100) %>%
   ungroup() %>%
   mutate(percent_signed = case_when(
-    kelp_dynamic %in% c("Gained in 2025", "Gained in 2024", "Gained in 2023") ~  percent,
-    kelp_dynamic %in% c("Lost in 2025", "Lost in 2024", "Lost in 2023")       ~ -percent
+    kelp_dynamic_label %in% c("Gained in 2025", "Gained in 2024", "Gained in 2023") ~  percent,
+    kelp_dynamic_label %in% c("Lost in 2025", "Lost in 2024", "Lost in 2023")       ~ -percent
   ))
 
 # create a column with year 
 gain_loss_summary <- gain_loss_summary %>% 
   mutate(year = case_when(
-    kelp_dynamic %in% c("Gained in 2025", "Lost in 2025") ~ "2025",
-    kelp_dynamic %in% c("Gained in 2024", "Lost in 2024") ~ "2024",
-    kelp_dynamic %in% c("Gained in 2023", "Lost in 2023") ~ "2023"
+    kelp_dynamic_label %in% c("Gained in 2025", "Lost in 2025") ~ "2025",
+    kelp_dynamic_label %in% c("Gained in 2024", "Lost in 2024") ~ "2024",
+    kelp_dynamic_label %in% c("Gained in 2023", "Lost in 2023") ~ "2023"
   ))
   
 # plot gain and loss %
@@ -771,12 +822,12 @@ kelp_presence_summary <- kelp_presence_summary %>%
 
 
 # Combine daily temperature data with yearly kelp presence
-kelp_presence_temp <- temp_data %>%
+kelp_presence_temp <- all_data_high_tide_region_avg %>%
   # Extract the year from the date column 't' to match with kelp presence
   mutate(year = as.integer(format(t, "%Y"))) 
 
 # calculate the max temps for each year
-temp_summary <- temp_data %>%
+temp_summary <- all_data_high_tide_region_avg %>%
   mutate(year = as.integer(format(t, "%Y"))) %>%   # extract year
   group_by(year, region) %>%
   summarise(
@@ -813,7 +864,7 @@ ggplot(kelp_presence_temp, aes(x = year, y = percent, colour = region)) +
     x = "",
     y = "Percent Kelp Presence") +
   scale_color_manual(name = "Region",
-                     values = c("Dynamic" = "blue", "Inlet" = "red")) +
+                     values = c(region_cols)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10))
 
 ggsave("figures/presence_time.png", plot = last_plot(), width = 12, height = 9, dpi = 300)
@@ -828,7 +879,7 @@ ggplot(kelp_presence_temp, aes(x = year, y = max_temp, colour = region)) +
     x = "",
     y = "Yearly Maximum Temperature (°C)") +
   scale_color_manual(name = "Region",
-                     values = c("Dynamic" = "blue", "Inlet" = "red"))
+                     values = c(region_cols))
 
 ggsave("figures/temp_time.png", plot = last_plot(), width = 12, height = 9, dpi = 300)
 
@@ -872,19 +923,20 @@ kelp_presence_scaled <- kelp_presence_scaled %>%
   )
 
 # Plot with model 
-ggplot(kelp_presence_scaled, aes(x = max_temp, y = percent, color = region, fill = region)) +
+lm_maxtemp_presence <- ggplot(kelp_presence_scaled, aes(x = max_temp, y = percent, color = region, fill = region)) +
   geom_point(size = 3) +  # actual data
   geom_line(aes(y = fit), size = 1) +  # regression line
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.2, color = NA) +  # CI shaded
   theme_classic() +
+  facet_wrap(~ region, scales = "free_y", ncol = 1) +
   labs(
     x = "Maximum Annual Temperature (°C)",
     y = "Kelp Presence (%)",
     color = "Region",
     fill = "Region"
   ) +
-  scale_color_manual(values = c("Dynamic" = "blue", "Inlet" = "red")) +
-  scale_fill_manual(values = c("Dynamic" = "blue", "Inlet" = "red")) +
+  scale_color_manual(values = c(region_cols)) +
+  scale_fill_manual(values = c(region_cols)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
   theme(
     axis.title.x = element_text(size = 16),  # x-axis label
@@ -895,7 +947,9 @@ ggplot(kelp_presence_scaled, aes(x = max_temp, y = percent, color = region, fill
     legend.text = element_text(size = 14)    # legend item font size
   )
 
-ggsave("figures/lm_presence_temp.png", plot = last_plot(), width = 9, height = 6, dpi = 300)
+lm_maxtemp_presence
+
+ggsave("figures/lm_presence_temp.png", plot = lm_maxtemp_presence, width = 9, height = 6, dpi = 300)
 
 # ------------------------------------------------------------------------------
 
@@ -904,11 +958,11 @@ ggsave("figures/lm_presence_temp.png", plot = last_plot(), width = 9, height = 6
 # ------------------------------------------------------------------------------
 
 # MEAN ANNUAL ------------------------------------------------------------------
-mean_annual_temp <- temp_data %>% 
-  mutate(year = as.integer(format(t, "%Y"))) %>%   # extract year
+mean_annual_temp <- all_data_high_tide_region_avg %>% 
+  mutate(year = as.integer(format(t, "%Y"))) %>%   
   group_by(year, region) %>%
   summarise(
-    mean_temp = mean(avg_temp, na.rm = TRUE),         
+    mean_temp = weighted.mean(avg_temp, w = rep(1, n()), na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -921,26 +975,24 @@ ggplot(kelp_mean_temp, aes(x = mean_temp, y = percent, colour = region)) +
   geom_line() +
   theme_classic() +
   labs(
-    x = "Mean Annual Temperature (°C)",
+    x = "Weighted Mean Annual Temperature (°C)",
     y = "Percent Kelp Presence") +
   scale_color_manual(name = "Region",
-                     values = c("Dynamic" = "blue", "Inlet" = "red")) +
+                     values = c(region_cols)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10))
 
 ggsave("figures/presence_annual_temp.png", plot = last_plot(), width = 12, height =9, dpi = 300)
 
 # MEAN SPRING (MAY TO JUNE) ----------------------------------------------------
-mean_spring_temp <- temp_data %>%
-# keep only spring months (May to June)
+mean_spring_temp <- all_data_high_tide_region_avg %>%
   filter(month(t) %in% 5:6) %>%
   mutate(
-    year = year(t),              # extract year
-    month = month(t)             # extract month number (1–12)
-    # month = month(t, label=TRUE)  # use this for "Jan", "Feb", etc.
+    year = year(t),              
+    month = month(t)             
   ) %>%
   group_by(year, month, region) %>%
   summarise(
-    mean_spring_temp = mean(avg_temp, na.rm = TRUE),
+    mean_spring_temp = weighted.mean(avg_temp, w = rep(1, n()), na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -954,26 +1006,24 @@ ggplot(kelp_mean_spring_temp, aes(x = mean_spring_temp, y = percent, colour = re
   geom_line() +
   theme_classic() +
   labs(
-    x = "Mean Spring Temperature (°C)",
+    x = "Weighted Mean Spring Temperature (°C)",
     y = "Percent Kelp Presence") +
   scale_color_manual(name = "Region",
-                     values = c("Dynamic" = "blue", "Inlet" = "red")) +
+                     values = c(region_cols)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10))
 
 ggsave("figures/presence_spring_temp.png", plot = last_plot(), width = 12, height =9, dpi = 300)
 
 # MEAN SUMMER (JULY TO AUGUST) -------------------------------------------------
-mean_summer_temp <- temp_data %>%
-  # keep only summer months (May to June)
+mean_summer_temp <- all_data_high_tide_region_avg %>%
   filter(month(t) %in% 7:8) %>%
   mutate(
-    year = year(t),              # extract year
-    month = month(t)             # extract month number (1–12)
-    # month = month(t, label=TRUE)  # use this for "Jan", "Feb", etc.
+    year = year(t),              
+    month = month(t)             
   ) %>%
   group_by(year, month, region) %>%
   summarise(
-    mean_summer_temp = mean(avg_temp, na.rm = TRUE),
+    mean_summer_temp = weighted.mean(avg_temp, w = rep(1, n()), na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -990,7 +1040,7 @@ ggplot(kelp_mean_summer_temp, aes(x = mean_summer_temp, y = percent, colour = re
     x = "Mean Summer Temperature (°C)",
     y = "Percent Kelp Presence") +
   scale_color_manual(name = "Region",
-                     values = c("Dynamic" = "blue", "Inlet" = "red")) +
+                     values = c(region_cols)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10))
 
 ggsave("figures/presnce_summer_temp.png", plot = last_plot(), width = 12, height =9, dpi = 300)
@@ -1007,7 +1057,7 @@ kelp_spring_scaled <- kelp_mean_spring_temp %>%
   mutate(mean_spring_temp_scaled = scale(mean_spring_temp))
 
 # Fit the linear model using scaled temperature but original percent
-lm_spring_scaled <- lm(percent ~ mean_spring_temp_scaled * region, data = kelp_spring_scaled)
+lm_spring_scaled <- lm(percent ~ mean_spring_temp_scaled + region, data = kelp_spring_scaled)
 summary(lm_spring_scaled)
 
 # checking for normally distributed residuals with hist
@@ -1042,8 +1092,8 @@ spring_kelp_plot <- ggplot(kelp_spring_scaled, aes(x = mean_spring_temp, y = per
     color = "Region",
     fill = "Region"
   ) +
-  scale_color_manual(values = c("Dynamic" = "blue", "Inlet" = "red")) +
-  scale_fill_manual(values = c("Dynamic" = "blue", "Inlet" = "red")) +
+  scale_color_manual(values = c(region_cols)) +
+  scale_fill_manual(values = c(region_cols)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
   theme(
     axis.title.x = element_text(size = 16),  # x-axis label
@@ -1054,6 +1104,7 @@ spring_kelp_plot <- ggplot(kelp_spring_scaled, aes(x = mean_spring_temp, y = per
     legend.text = element_text(size = 14)    # legend item font size
   )
 
+spring_kelp_plot
 
 ggsave("figures/lm_spring_temp.png", plot = last_plot(), width = 9, height = 6, dpi = 300)
 
@@ -1098,10 +1149,12 @@ summer_kelp_plot <- ggplot(kelp_summer_scaled, aes(x = mean_summer_temp, y = per
     color = "Region",
     fill = "Region"
   ) +
-  scale_color_manual(values = c("Dynamic" = "blue", "Inlet" = "red")) +
-  scale_fill_manual(values = c("Dynamic" = "blue", "Inlet" = "red")) +
-  scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
-M
+  scale_color_manual(values = c(region_cols)) +
+  scale_fill_manual(values = c(region_cols)) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) 
+
+summer_kelp_plot
+
 ggsave("figures/lm_summer_temp.png", plot = last_plot(), width = 9, height = 6, dpi = 300)
 
 

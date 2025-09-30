@@ -365,6 +365,13 @@ ggplot(all_data_high_tide, aes(x = t, y = temp, colour = id)) +
   geom_line() +
   facet_wrap(~ id, scales = "free_y", ncol = 2)  # SC3 looks a little weird 
 
+# Convert t to POSIXct if it isn't already
+all_data_high_tide <- all_data_high_tide %>%
+  mutate(
+    t = as.POSIXct(t),        # convert to datetime
+    date = as.Date(t)          # extract the date only
+  )
+
 # Need to make sure temp line is not drawn if logger is missed one year 
 # assigning stations to region and averaging across
 all_data_high_tide_region_avg <- all_data_high_tide %>% 
@@ -375,15 +382,15 @@ all_data_high_tide_region_avg <- all_data_high_tide %>%
     id %in% c("sc1", "sc2", "bati5") ~ "3",
     id %in% c("sc9", "bati9", "sc10") ~ "4"
   )) %>% 
-  group_by(region, t) %>% 
+  group_by(region, date) %>% 
   summarise(avg_temp = mean(temp, na.rm = TRUE)) 
 
 # plotting temperature by region
 library(scales)  # for date formatting
 temp_time_facet <- ggplot(all_data_high_tide_region_avg) +
-  geom_line(aes(t, avg_temp)) +
+  geom_line(aes(date, avg_temp)) +
   facet_wrap(~ region, scales = "free_y", ncol = 1) +
-  scale_x_datetime(
+  scale_x_date(
     date_labels = "%b %Y",      # label format: Month Year
     date_breaks = "1 month"     # place a tick every month
   ) +
@@ -411,9 +418,9 @@ ggsave("figures/temp_region_plot_facet.png", plot = temp_time_facet, width = 12,
 
 # plotting it a bit differently 
 library(RColorBrewer)
-temp_time_colour <- ggplot(all_data_high_tide_region_avg, aes(x = t, y = avg_temp, colour = region)) +
+temp_time_colour <- ggplot(all_data_high_tide_region_avg, aes(x = date, y = avg_temp, colour = region)) +
   geom_line(alpha = 0.9) +
-  scale_x_datetime(
+  scale_x_date(
     date_labels = "%b %Y",      # label format: Month Year
     date_breaks = "1 month"     # place a tick every month
   ) +
@@ -436,10 +443,65 @@ temp_time_colour
 ggsave("figures/temp_region_plot_colour.png", plot = temp_time_colour, width = 14, height = 6, dpi = 300)
 
 
+# ------------------------------------------------------------------------------
 
+# CACULATING TEMPERATURE ANOMALIES
+ 
+# ------------------------------------------------------------------------------
+library(dplyr)
+library(readr)
+library(lubridate) 
 
+## Putting Pine Island climatology together 
+# List all CSV files that match your pattern
+files <- list.files("data", pattern = "pine_island_.*\\.csv$", full.names = TRUE)
 
+all_data <- lapply(files, function(f) {
+  read_csv(f, col_types = cols(.default = "c"))  # read everything as character
+}) %>% bind_rows()
 
+head(all_data)
+
+# Save combined data as a new CSV
+write_csv(all_data, "data/pine_island_combined.csv")
+
+# Read in combined csv 
+pine_island <- read_csv("data/pine_island_combined.csv")
+
+pine_island <- pine_island %>%
+  select(
+    station_date = `Date/Time`,
+    station_temp = `Mean Temp (°C)`
+  ) %>%
+  filter(!is.na(station_temp))   
+
+logger_daily <- all_data_high_tide_region_avg 
+  
+# Rename columns so they match for joining
+pine_island <- pine_island %>%
+  rename(date = station_date,
+         temp_station = station_temp)
+logger_daily <- logger_daily %>%
+  rename(temp_logger = avg_temp)
+
+pine_island <- pine_island %>%
+  mutate(doy = yday(date))
+logger_daily <- logger_daily %>%
+  mutate(doy = yday(date))
+
+## Calculate climatology for DOY
+daily_clim <- pine_island %>%
+  group_by(doy) %>%
+  summarise(temp_clim = mean(temp_station, na.rm = TRUE))
+
+# Overlap period: 2022–2024
+overlap <- logger_daily %>%
+  filter(date <= as.Date("2024-12-31")) %>%
+  left_join(pine_island, by = "date", relationship = "many-to-many")
+
+bias_per_region <- overlap %>%
+  group_by(region) %>%
+  summarise(bias_offset = mean(avg_temp - temp_station, na.rm = TRUE))
 
 
 
