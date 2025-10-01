@@ -765,7 +765,7 @@ gain_loss_percent <- ggplot(gain_loss_summary, aes(x = year, y = percent_signed,
     y = "Net Percentage of Segments",
     fill = "Region"
   ) +
-  scale_y_continuous(breaks = c(-30, -20, -10, 0, 10, 20, 30, 40)) +
+  scale_y_continuous(breaks = c(-60, -50, -40, -30, -20, -10, 0, 10, 20, 30, 40, 50)) +
   theme_classic()
 gain_loss_percent
 
@@ -823,12 +823,12 @@ kelp_presence_summary <- kelp_presence_summary %>%
 
 # Combine daily temperature data with yearly kelp presence
 kelp_presence_temp <- all_data_high_tide_region_avg %>%
-  # Extract the year from the date column 't' to match with kelp presence
-  mutate(year = as.integer(format(t, "%Y"))) 
+  ungroup() %>%                  # remove any grouping
+  mutate(year = as.integer(format(date, "%Y")))
 
 # calculate the max temps for each year
 temp_summary <- all_data_high_tide_region_avg %>%
-  mutate(year = as.integer(format(t, "%Y"))) %>%   # extract year
+  mutate(year = as.integer(format(date, "%Y"))) %>%   # extract year
   group_by(year, region) %>%
   summarise(
     max_temp = max(avg_temp, na.rm = TRUE),           # maximum temperature
@@ -923,10 +923,10 @@ kelp_presence_scaled <- kelp_presence_scaled %>%
   )
 
 # Plot with model 
-lm_maxtemp_presence <- ggplot(kelp_presence_scaled, aes(x = max_temp, y = percent, color = region, fill = region)) +
-  geom_point(size = 3) +  # actual data
-  geom_line(aes(y = fit), size = 1) +  # regression line
-  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.2, color = NA) +  # CI shaded
+lm_maxtemp_presence <- ggplot(kelp_presence_scaled, aes(x = max_temp, y = percent)) +
+  geom_point(size = 3, alpha = 0.8) +  # actual data
+  geom_line(aes(y = fit), size = 1, alpha = 0.8) +  # regression line
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.1, color = NA) +  # CI shaded
   theme_classic() +
   facet_wrap(~ region, scales = "free_y", ncol = 1) +
   labs(
@@ -945,11 +945,12 @@ lm_maxtemp_presence <- ggplot(kelp_presence_scaled, aes(x = max_temp, y = percen
     axis.text.y  = element_text(size = 14),   # y-axis tick labels
     legend.title = element_text(size = 16),  # legend title font size
     legend.text = element_text(size = 14)    # legend item font size
-  )
+  ) +
+  theme(strip.text = element_text(size = 14))  # increase facet label size
 
 lm_maxtemp_presence
 
-ggsave("figures/lm_presence_temp.png", plot = lm_maxtemp_presence, width = 9, height = 6, dpi = 300)
+ggsave("figures/lm_presence_temp.png", plot = lm_maxtemp_presence, width = 9, height = 8, dpi = 300)
 
 # ------------------------------------------------------------------------------
 
@@ -959,7 +960,7 @@ ggsave("figures/lm_presence_temp.png", plot = lm_maxtemp_presence, width = 9, he
 
 # MEAN ANNUAL ------------------------------------------------------------------
 mean_annual_temp <- all_data_high_tide_region_avg %>% 
-  mutate(year = as.integer(format(t, "%Y"))) %>%   
+  mutate(year = as.integer(format(date, "%Y"))) %>%   
   group_by(year, region) %>%
   summarise(
     mean_temp = weighted.mean(avg_temp, w = rep(1, n()), na.rm = TRUE),
@@ -985,10 +986,10 @@ ggsave("figures/presence_annual_temp.png", plot = last_plot(), width = 12, heigh
 
 # MEAN SPRING (MAY TO JUNE) ----------------------------------------------------
 mean_spring_temp <- all_data_high_tide_region_avg %>%
-  filter(month(t) %in% 5:6) %>%
+  filter(month(date) %in% 5:6) %>%
   mutate(
-    year = year(t),              
-    month = month(t)             
+    year = year(date),              
+    month = month(date)             
   ) %>%
   group_by(year, month, region) %>%
   summarise(
@@ -1016,10 +1017,10 @@ ggsave("figures/presence_spring_temp.png", plot = last_plot(), width = 12, heigh
 
 # MEAN SUMMER (JULY TO AUGUST) -------------------------------------------------
 mean_summer_temp <- all_data_high_tide_region_avg %>%
-  filter(month(t) %in% 7:8) %>%
+  filter(month(date) %in% 7:8) %>%
   mutate(
-    year = year(t),              
-    month = month(t)             
+    year = year(date),              
+    month = month(date)             
   ) %>%
   group_by(year, month, region) %>%
   summarise(
@@ -1093,6 +1094,7 @@ spring_kelp_plot <- ggplot(kelp_spring_scaled, aes(x = mean_spring_temp, y = per
     fill = "Region"
   ) +
   scale_color_manual(values = c(region_cols)) +
+  facet_wrap(~ region, scales = "free_y", ncol = 1) +
   scale_fill_manual(values = c(region_cols)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
   theme(
@@ -1143,6 +1145,7 @@ summer_kelp_plot <- ggplot(kelp_summer_scaled, aes(x = mean_summer_temp, y = per
   geom_line(aes(y = fit), size = 1) +  # regression line
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.2, color = NA) +  # CI shaded
   theme_classic() +
+  facet_wrap(~ region, scales = "free_y", ncol = 1) +
   labs(
     x = "Mean Summer Temperature (°C)",
     y = "Kelp Presence (%)",
@@ -1151,7 +1154,15 @@ summer_kelp_plot <- ggplot(kelp_summer_scaled, aes(x = mean_summer_temp, y = per
   ) +
   scale_color_manual(values = c(region_cols)) +
   scale_fill_manual(values = c(region_cols)) +
-  scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) 
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
+  theme(
+    axis.title.x = element_text(size = 16),  # x-axis label
+    axis.title.y = element_text(size = 16),  # y-axis label
+    axis.text.x  = element_text(size = 14),  # x-axis tick labels
+    axis.text.y  = element_text(size = 14),   # y-axis tick labels
+    legend.title = element_text(size = 16),  # legend title font size
+    legend.text = element_text(size = 14)    # legend item font size
+  )
 
 summer_kelp_plot
 
@@ -1169,7 +1180,8 @@ summer_kelp_plot_no_y <- summer_kelp_plot +
   )
 
 # Combine plots
-ggarrange(
+library(ggpubr)
+lm_spring_summer_plot <- ggarrange(
   spring_kelp_plot,
   summer_kelp_plot_no_y,
   ncol = 2,
@@ -1179,7 +1191,7 @@ ggarrange(
   labels = c("A", "B") 
 )
 
-ggsave("figures/lm_spring_summer.png", plot = last_plot(), width = 14, height = 6, dpi = 300)
+ggsave("figures/lm_spring_summer.png", plot = lm_spring_summer_plot , width = 14, height = 7, dpi = 300)
 
 ### SPRING VS SUMMER MODELS ###
 kelp_spring_scaled <- kelp_spring_scaled %>%
