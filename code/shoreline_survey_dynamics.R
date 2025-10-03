@@ -534,7 +534,7 @@ gain_loss_23_map <- mapview(
 
 gain_loss_23_map
 
-mapshot(gain_loss_23_map, file = "figures/gain_loss_23.png",vwidth = 700, vheight = 500, zoom = 10)
+mapshot(gain_loss_23_map, file = "figures/gain_loss_23.png",vwidth = 700, vheight = 500, zoom = 20)
 
 # 2024 DYNAMICS-----------------------------------------------------------------
 # filter your data for dynamics in 2024
@@ -894,7 +894,7 @@ kelp_presence_scaled <- kelp_presence_temp %>%
   mutate(max_temp_scaled = scale(max_temp))
 
 # Fit the linear model using scaled temperature but original percent
-lm_scaled <- lm(percent ~ max_temp_scaled * region, data = kelp_presence_scaled)
+lm_scaled <- lm(percent ~ max_temp_scaled, data = kelp_presence_scaled)
 summary(lm_scaled)
 
 # checking for normally distributed residuals with hist
@@ -908,7 +908,6 @@ qqPlot(lm_scaled$lm_scaled_resids)
 
 # checking for relationships between residuals and predictors
 residualPlot(lm_scaled, tests = FALSE) 
-
 # Plot
 library(dplyr)
 library(ggplot2)
@@ -924,11 +923,11 @@ kelp_presence_scaled <- kelp_presence_scaled %>%
 
 # Plot with model 
 lm_maxtemp_presence <- ggplot(kelp_presence_scaled, aes(x = max_temp, y = percent)) +
-  geom_point(size = 3, alpha = 0.8) +  # actual data
+  geom_point(size = 3, alpha = 0.8, aes(colour = region)) +  # actual data
   geom_line(aes(y = fit), size = 1, alpha = 0.8) +  # regression line
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.1, color = NA) +  # CI shaded
   theme_classic() +
-  facet_wrap(~ region, scales = "free_y", ncol = 1) +
+  #facet_wrap(~ region, scales = "free_y", ncol = 1) +
   labs(
     x = "Maximum Annual Temperature (°C)",
     y = "Kelp Presence (%)",
@@ -991,7 +990,7 @@ mean_spring_temp <- all_data_high_tide_region_avg %>%
     year = year(date),              
     month = month(date)             
   ) %>%
-  group_by(year, month, region) %>%
+  group_by(year, region) %>%
   summarise(
     mean_spring_temp = weighted.mean(avg_temp, w = rep(1, n()), na.rm = TRUE),
     .groups = "drop"
@@ -1022,7 +1021,7 @@ mean_summer_temp <- all_data_high_tide_region_avg %>%
     year = year(date),              
     month = month(date)             
   ) %>%
-  group_by(year, month, region) %>%
+  group_by(year, region) %>%
   summarise(
     mean_summer_temp = weighted.mean(avg_temp, w = rep(1, n()), na.rm = TRUE),
     .groups = "drop"
@@ -1058,7 +1057,7 @@ kelp_spring_scaled <- kelp_mean_spring_temp %>%
   mutate(mean_spring_temp_scaled = scale(mean_spring_temp))
 
 # Fit the linear model using scaled temperature but original percent
-lm_spring_scaled <- lm(percent ~ mean_spring_temp_scaled + region, data = kelp_spring_scaled)
+lm_spring_scaled <- lm(percent ~ mean_spring_temp_scaled, data = kelp_spring_scaled)
 summary(lm_spring_scaled)
 
 # checking for normally distributed residuals with hist
@@ -1082,8 +1081,8 @@ kelp_spring_scaled <- kelp_spring_scaled %>%
   )
 
 # Plot with model 
-spring_kelp_plot <- ggplot(kelp_spring_scaled, aes(x = mean_spring_temp, y = percent, color = region, fill = region)) +
-  geom_point(size = 3) +  # actual data
+spring_kelp_plot <- ggplot(kelp_spring_scaled, aes(x = mean_spring_temp, y = percent)) +
+  geom_point(size = 3, aes(colour = region)) +  # actual data
   geom_line(aes(y = fit), size = 1) +  # regression line
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.2, color = NA) +  # CI shaded
   theme_classic() +
@@ -1094,7 +1093,6 @@ spring_kelp_plot <- ggplot(kelp_spring_scaled, aes(x = mean_spring_temp, y = per
     fill = "Region"
   ) +
   scale_color_manual(values = c(region_cols)) +
-  facet_wrap(~ region, scales = "free_y", ncol = 1) +
   scale_fill_manual(values = c(region_cols)) +
   scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
   theme(
@@ -1116,7 +1114,7 @@ kelp_summer_scaled <- kelp_mean_summer_temp %>%
   mutate(mean_summer_temp_scaled = scale(mean_summer_temp))
 
 # Fit the linear model using scaled temperature but original percent
-lm_summer_scaled <- lm(percent ~ mean_summer_temp_scaled * region, data = kelp_summer_scaled)
+lm_summer_scaled <- lm(percent ~ mean_summer_temp_scaled, data = kelp_summer_scaled)
 summary(lm_summer_scaled)
 
 # checking for normally distributed residuals with hist
@@ -1140,12 +1138,11 @@ kelp_summer_scaled <- kelp_summer_scaled %>%
   )
 
 # Plot with model 
-summer_kelp_plot <- ggplot(kelp_summer_scaled, aes(x = mean_summer_temp, y = percent, color = region, fill = region)) +
-  geom_point(size = 3) +  # actual data
+summer_kelp_plot <- ggplot(kelp_summer_scaled, aes(x = mean_summer_temp, y = percent)) +
+  geom_point(size = 3, aes(colour = region)) +  # actual data
   geom_line(aes(y = fit), size = 1) +  # regression line
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.2, color = NA) +  # CI shaded
   theme_classic() +
-  facet_wrap(~ region, scales = "free_y", ncol = 1) +
   labs(
     x = "Mean Summer Temperature (°C)",
     y = "Kelp Presence (%)",
