@@ -488,7 +488,7 @@ persistent_map <- mapview(
   cex = 2,
   zcol = "kelp_dynamic_label",
   legend = TRUE,
-  col.regions = c("Absent" = "#64B5F6", "Persistent" ="#D2B48C" ), # colors for these categories
+  col.regions = c("Absent" = "#F4A460", "Persistent" ="#00BFFF" ), # colors for these categories
   alpha = 0.8,
   lwd = 0,
   col = NA,
@@ -498,7 +498,7 @@ persistent_map <- mapview(
 persistent_map
 
 webshot::install_phantomjs()
-mapshot(persistent_map, file = "figures/persistence_map.png", vwidth = 700, vheight = 500, zoom = 10)
+mapshot(persistent_map, file = "figures/persistence_map.png", vwidth = 700, vheight = 450, zoom = 20)
 
 
 # LOOKING AT DIFFERENT COMBINATIONS FOR PLOTS ----------------------------------
@@ -525,7 +525,7 @@ gain_loss_23_map <- mapview(
   cex = 2,
   zcol = "kelp_dynamic_label",
   legend = TRUE,
-  col.regions = c("Gained in 2023" = "forestgreen", "Lost in 2023" = "red", "Persistent"  = "steelblue", "Absent" = "tan"), # colors for these categories
+  col.regions = c("Gained in 2023" = "forestgreen", "Lost in 2023" = "red", "Persistent"  = "#00BFFF", "Absent" = "#F4A460"), # colors for these categories
   alpha = 0.2,
   lwd = 0,
   col = NA,
@@ -534,7 +534,46 @@ gain_loss_23_map <- mapview(
 
 gain_loss_23_map
 
-mapshot(gain_loss_23_map, file = "figures/gain_loss_23.png",vwidth = 700, vheight = 500, zoom = 20)
+mapshot(gain_loss_23_map, file = "figures/gain_loss_23.png",vwidth = 700, vheight = 450, zoom = 20)
+
+## Trying to plot persistent and absent as more see through
+# Prepare data with fill colors and alpha
+gain_loss_23_subset_new <- gain_loss_23_subset %>%
+  mutate(
+    fill_color = case_when(
+      kelp_dynamic_label == "Gained in 2023" ~ "forestgreen",
+      kelp_dynamic_label == "Lost in 2023" ~ "red",
+      kelp_dynamic_label == "Persistent" ~ "#00BFFF",
+      kelp_dynamic_label == "Absent" ~ "#F4A460"
+    ),
+    fill_alpha = case_when(
+      kelp_dynamic_label %in% c("Persistent", "Absent") ~ 0.2,  # faint
+      TRUE ~ 1   # solid
+    )
+  )
+
+# Create map
+gain_loss_map_23_new <- leaflet(gain_loss_23_subset_new) %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addCircleMarkers(
+    ~x, ~y,
+    radius = 3,
+    fillColor = ~fill_color,
+    color = ~fill_color,     # match fill for no outline effect
+    weight = 0,              # no stroke
+    fillOpacity = ~fill_alpha,
+    label = ~kelp_dynamic_label
+  ) %>%
+  addLegend(
+    "topright",
+    colors = c("forestgreen", "red", "#00BFFF", "#F4A460"),
+    labels = c("Gained in 2023", "Lost in 2023", "Persistent", "Absent"),
+    title = "Kelp Dynamics", opacity = 1
+  )
+
+gain_loss_map_23_new
+
+mapshot(gain_loss_map_23_new, file = "figures/gain_loss_23_new.png",vwidth = 700, vheight = 450, zoom = 20)
 
 # 2024 DYNAMICS-----------------------------------------------------------------
 # filter your data for dynamics in 2024
@@ -557,7 +596,7 @@ gain_loss_24_map <- mapview(
   cex = 2,
   zcol = "kelp_dynamic_label",
   legend = TRUE,
-  col.regions = c("Gained in 2024" = "forestgreen", "Lost in 2024" = "red", "Persistent"  = "steelblue", "Absent" = "tan"),  alpha = 0.2,
+  col.regions = c("Gained in 2024" = "forestgreen", "Lost in 2024" = "red", "Persistent"  = "#00BFFF", "Absent" = "#F4A460"),  alpha = 0.2,
   lwd = 0,
   col = NA,
   layer.name = "Kelp Dynamics"
@@ -565,7 +604,47 @@ gain_loss_24_map <- mapview(
 
 gain_loss_24_map
 
-mapshot(gain_loss_24_map, file = "figures/gain_loss_24.png",vwidth = 700, vheight = 500, zoom = 10)
+mapshot(gain_loss_24_map, file = "figures/gain_loss_24.png",vwidth = 700, vheight = 450, zoom = 20)
+
+## Trying to plot persistent and absent as more see through
+# Prepare data with fill colors and alpha
+gain_loss_24_subset_new <- gain_loss_24_subset %>%
+  mutate(
+    fill_color = case_when(
+      kelp_dynamic_label == "Gained in 2024" ~ "forestgreen",
+      kelp_dynamic_label == "Lost in 2024" ~ "red",
+      kelp_dynamic_label == "Persistent" ~ "#00BFFF",
+      kelp_dynamic_label == "Absent" ~ "#F4A460"
+    ),
+    fill_alpha = case_when(
+      kelp_dynamic_label %in% c("Persistent", "Absent") ~ 0.2,  # faint
+      TRUE ~ 1   # solid
+    )
+  )
+
+# Create map
+gain_loss_map_24_new <- leaflet(gain_loss_24_subset_new) %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addCircleMarkers(
+    ~x, ~y,
+    radius = 3,
+    fillColor = ~fill_color,
+    color = ~fill_color,     # match fill for no outline effect
+    weight = 0,              # no stroke
+    fillOpacity = ~fill_alpha,
+    label = ~kelp_dynamic_label
+  ) %>%
+  addLegend(
+    "topright",
+    colors = c("forestgreen", "red", "#00BFFF", "#F4A460"),
+    labels = c("Gained in 2024", "Lost in 2024", "Persistent", "Absent"),
+    title = "Kelp Dynamics", opacity = 1
+  )
+
+gain_loss_map_24_new
+
+mapshot(gain_loss_map_24_new, file = "figures/gain_loss_24_new.png",vwidth = 700, vheight = 450, zoom = 20)
+
 
 # 2025 DYNAMICS-----------------------------------------------------------------
 # filter your data for dynamics in 2025
@@ -588,7 +667,7 @@ gain_loss_25_map <- mapview(
   cex = 2,
   zcol = "kelp_dynamic_label",
   legend = TRUE,
-  col.regions = c("Gained in 2025" = "forestgreen", "Lost in 2025" = "red", "Persistent"  = "steelblue", "Absent" = "tan"),  alpha = 0.2, 
+  col.regions = c("Gained in 2025" = "forestgreen", "Lost in 2025" = "red", "Persistent"  = "#00BFFF", "Absent" = "#F4A460"),  alpha = 0.2, 
   lwd = 0,
   col = NA,
   layer.name = "Kelp Dynamics"
@@ -596,21 +675,60 @@ gain_loss_25_map <- mapview(
 
 gain_loss_25_map
 
-mapshot(gain_loss_25_map, file = "figures/gain_loss_25.png",vwidth = 700, vheight = 500, zoom = 10)
+mapshot(gain_loss_25_map, file = "figures/gain_loss_25.png",vwidth = 700, vheight = 0, zoom = 20)
+
+## Trying to plot persistent and absent as more see through
+# Prepare data with fill colors and alpha
+gain_loss_25_subset_new <- gain_loss_25_subset %>%
+  mutate(
+    fill_color = case_when(
+      kelp_dynamic_label == "Gained in 2025" ~ "forestgreen",
+      kelp_dynamic_label == "Lost in 2025" ~ "red",
+      kelp_dynamic_label == "Persistent" ~ "#00BFFF",
+      kelp_dynamic_label == "Absent" ~ "#F4A460"
+    ),
+    fill_alpha = case_when(
+      kelp_dynamic_label %in% c("Persistent", "Absent") ~ 0.2,  # faint
+      TRUE ~ 1   # solid
+    )
+  )
+
+# Create map
+gain_loss_map_25_new <- leaflet(gain_loss_25_subset_new) %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addCircleMarkers(
+    ~x, ~y,
+    radius = 3,
+    fillColor = ~fill_color,
+    color = ~fill_color,     # match fill for no outline effect
+    weight = 0,              # no stroke
+    fillOpacity = ~fill_alpha,
+    label = ~kelp_dynamic_label
+  ) %>%
+  addLegend(
+    "topright",
+    colors = c("forestgreen", "red", "#00BFFF", "#F4A460"),
+    labels = c("Gained in 2025", "Lost in 2025", "Persistent", "Absent"),
+    title = "Kelp Dynamics", opacity = 1
+  )
+
+gain_loss_map_25_new
+
+mapshot(gain_loss_map_25_new, file = "figures/gain_loss_25_new.png",vwidth = 700, vheight = 450, zoom = 20)
 
 
 # Arrange maps into one plot ---------------------------------------------------
 library(magick)
 
 # Read images
-img1 <- image_read("figures/gain_loss_23.png")
-img2 <- image_read("figures/gain_loss_24.png")
-img3 <- image_read("figures/gain_loss_25.png")
+img1 <- image_read("figures/gain_loss_23_new.png")
+img2 <- image_read("figures/gain_loss_24_new.png")
+img3 <- image_read("figures/gain_loss_25_new.png")
 
 # Label each image
-img1 <- image_annotate(img1, "A", size = 300, color = "black", gravity = "NorthWest")
-img2 <- image_annotate(img2, "B", size = 300, color = "black", gravity = "NorthWest")
-img3 <- image_annotate(img3, "C", size = 300, color = "black", gravity = "NorthWest")
+img1 <- image_annotate(img1, "A", size = 700, color = "black", gravity = "NorthWest")
+img2 <- image_annotate(img2, "B", size = 700, color = "black", gravity = "NorthWest")
+img3 <- image_annotate(img3, "C", size = 700, color = "black", gravity = "NorthWest")
 
 # Combine vertically
 combined <- image_append(c(img1, img2, img3), stack = TRUE)
@@ -689,46 +807,86 @@ region_summary <- merged_data_22_23_24_25 %>%
         Location %in% c("Minstrel", "Doctor") ~ "4"
   ))
 
+# Read in logger locations 
+logger_locations <- read_csv("data/logger_locations.csv") %>%
+  mutate(site_id = ifelse(site_id == "BATI12 (BATI14)", "BATI12", site_id)) %>%
+  filter(!site_id %in% c("SC5", "SC6", "SC21", "SC7", "SC20", "BATI29", "SC11", "BATI2")) %>%
+  mutate(region = case_when(
+    site_id %in% c("SC3", "SC18", "SC17") ~ "1",
+    site_id %in% c("SC4", "BATI12", "BATI3") ~ "2",
+    site_id %in% c("SC1", "SC2", "BATI5") ~ "3",
+    site_id %in% c("SC9", "BATI9", "SC10") ~ "4"
+  ))
+
+# Split labels for top/bottom
+top_labels <- logger_locations %>% filter(site_id != "BATI5")
+bottom_label <- logger_locations %>% filter(site_id == "BATI5")
+
 region_cols <- c(
   "1" = "#66B2FF",  # bright pastel blue
   "2" = "#FF6666",  # bright pastel red
   "3" = "lightgreen",  # bright pastel green
   "4" = "#FFB266"   # bright pastel orange
 )
-# make rendered html self-contained
-mapviewOptions(fgb = FALSE)
 
-# Plotting a map for the 4 regions 
-region_map <- mapview(
-  region_summary,
-  xcol = "x", ycol = "y",
-  crs = 4269, grid = FALSE,
-  cex = 2, legend = TRUE,
-  zcol = "region", alpha = 0,
-  col.regions = region_cols,
-  layer.name = "Region"
-)
+pal <- colorFactor(palette = region_cols, domain = c(region_summary$region, logger_locations$region))
 
-region_map
+pal_logger <- colorFactor(palette = region_cols, domain = logger_locations$region)
 
-mapview::mapshot(region_map, file = "figures/region_map.png", vwidth = 840, vheight = 500, zoom = 10)
+# Make a map with both logger locations and surveys by region
+survey_logger_map <- leaflet() %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  
+  # Survey points: large, semi-transparent
+  addCircleMarkers(
+    data = region_summary,
+    ~x, ~y,
+    radius = 3,
+    color = ~pal(region),
+    fillOpacity = 0.25,
+    stroke = FALSE,
+    label = ~region
+  ) %>%
+  
+  # Logger points: smaller, solid, black outline
+  addCircleMarkers(
+    data = logger_locations,
+    ~lon, ~lat,
+    radius = 5,
+    fillColor = ~pal(region),  # region color inside
+    color = "black",           # black outline
+    weight = 2,                # outline thickness
+    fillOpacity = 1
+  ) %>%
+  
+  # Logger labels
+  addLabelOnlyMarkers(
+    data = top_labels,
+    ~lon, ~lat,
+    label = ~site_id,
+    labelOptions = labelOptions(noHide = TRUE, direction = "top", textOnly = TRUE,
+                                style = list("color" = "black", "font-size" = "14px", "padding" = "2px"))
+  ) %>%
+  addLabelOnlyMarkers(
+    data = bottom_label,
+    ~lon, ~lat,
+    label = ~site_id,
+    labelOptions = labelOptions(noHide = TRUE, direction = "bottom", textOnly = TRUE,
+                                style = list("color" = "black", "font-size" = "14px", "padding" = "2px"))
+  ) %>%
+  
+  # Legend
+  addLegend(
+    "topright",
+    pal = pal_logger,
+    values = logger_locations$region,
+    title = "Region", 
+    opacity = 1
+  )
 
+survey_logger_map
 
-# Read images
-img4 <- image_read("figures/region_map.png")
-img5 <- image_read("figures/logger_locations_map.png")
-
-# Label each image
-img4 <- image_annotate(img4, "A", size = 300, color = "black", gravity = "NorthWest")
-img5 <- image_annotate(img5, "B", size = 300, color = "black", gravity = "NorthWest")
-
-
-# Combine vertically
-combined <- image_append(c(img4, img5), stack = TRUE)
-
-
-# Save output
-image_write(combined, "figures/combined_region_logger_maps.png")
+mapview::mapshot(survey_logger_map, file = "figures/survey_logger_map.png", vwidth = 860, vheight = 500, zoom = 20)
 
 
 # Gain and Loss Percent --------------------------------------------------------
@@ -754,7 +912,21 @@ gain_loss_summary <- gain_loss_summary %>%
     kelp_dynamic_label %in% c("Gained in 2024", "Lost in 2024") ~ "2024",
     kelp_dynamic_label %in% c("Gained in 2023", "Lost in 2023") ~ "2023"
   ))
-  
+
+# Make a table of percents 
+gain_loss_yearly <- gain_loss_summary %>%
+  group_by(year) %>%
+  summarise(
+    total_gain = sum(count[kelp_dynamic_label %in% c("Gained in 2025","Gained in 2024","Gained in 2023")]),
+    total_loss = sum(count[kelp_dynamic_label %in% c("Lost in 2025","Lost in 2024","Lost in 2023")]),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    total_segments = total_gain + total_loss,
+    percent_gain = (total_gain / total_segments) * 100,
+    percent_loss = (total_loss / total_segments) * 100
+  )
+
 # plot gain and loss %
 gain_loss_percent <- ggplot(gain_loss_summary, aes(x = year, y = percent_signed, fill = region)) +
   geom_bar(stat = "identity", position = position_dodge(width = 0.9)) +
@@ -818,8 +990,6 @@ kelp_presence_summary <- kelp_presence_summary %>%
 
 kelp_presence_summary <- kelp_presence_summary %>% 
   filter(kelp_presence == 1)
-
-
 
 # Combine daily temperature data with yearly kelp presence
 kelp_presence_temp <- all_data_high_tide_region_avg %>%
@@ -921,12 +1091,23 @@ kelp_presence_scaled <- kelp_presence_scaled %>%
     upr = predict(lm_scaled, newdata = kelp_presence_scaled, interval = "confidence")[, "upr"]
   )
 
+# For showing the p value in the plot 
+p_val <- summary(lm_scaled)$coefficients["max_temp_scaled", "Pr(>|t|)"]
+p_label <- paste0("p = ", signif(p_val, 3))
+
 # Plot with model 
 lm_maxtemp_presence <- ggplot(kelp_presence_scaled, aes(x = max_temp, y = percent)) +
   geom_point(size = 3, alpha = 0.8, aes(colour = region)) +  # actual data
   geom_line(aes(y = fit), size = 1, alpha = 0.8) +  # regression line
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.1, color = NA) +  # CI shaded
-  theme_classic() +
+  annotate("text",
+           x = Inf,           # right edge
+           y = Inf,           # top edge
+           label = p_label,
+           hjust = 1.1,       # slightly inset from right
+           vjust = 3.1,       # slightly inset from top
+           size = 5) +
+   theme_classic() +
   #facet_wrap(~ region, scales = "free_y", ncol = 1) +
   labs(
     x = "Maximum Annual Temperature (°C)",
@@ -949,8 +1130,40 @@ lm_maxtemp_presence <- ggplot(kelp_presence_scaled, aes(x = max_temp, y = percen
 
 lm_maxtemp_presence
 
-ggsave("figures/lm_presence_temp.png", plot = lm_maxtemp_presence, width = 9, height = 8, dpi = 300)
+ggsave("figures/lm_presence_maxtemp.png", plot = lm_maxtemp_presence, width = 9, height = 6, dpi = 300)
 
+library(ggpubr)  # for stat_regline_equation and stat_cor
+
+lm_maxtemp_presence <- ggplot(kelp_presence_scaled, aes(x = max_temp, y = percent)) +
+  geom_point(size = 3, alpha = 0.8, aes(colour = region)) +  
+  geom_line(aes(y = fit), size = 1, alpha = 0.8) +  
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.1, color = NA) +  
+  theme_classic() +
+  labs(
+    x = "Maximum Annual Temperature (°C)",
+    y = "Kelp Presence (%)",
+    color = "Region",
+    fill = "Region"
+  ) +
+  scale_color_manual(values = c(region_cols)) +
+  scale_fill_manual(values = c(region_cols)) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
+  theme(
+    axis.title.x = element_text(size = 16),
+    axis.title.y = element_text(size = 16),
+    axis.text.x  = element_text(size = 14),
+    axis.text.y  = element_text(size = 14),
+    legend.title = element_text(size = 16),
+    legend.text = element_text(size = 14)
+  ) +
+  theme(strip.text = element_text(size = 14)) +
+  # Add p-value and equation
+  stat_regline_equation(aes(label = paste(..eq.label.., ..adj.r.squared.., sep = "~~~")), 
+                        label.x.npc = "left", label.y.npc = 0.95, size = 5) +
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), 
+           label.x.npc = "left", label.y.npc = 0.9, size = 5)
+
+lm_maxtemp_presence
 # ------------------------------------------------------------------------------
 
 # NOW LOOK AT KELP PRESENCE AND MEAN ANNUAL TEMP, SUMMER, AND SPRING TEMPS
@@ -1176,6 +1389,22 @@ summer_kelp_plot_no_y <- summer_kelp_plot +
     plot.margin = unit(c(0, 0, 0.3, 2), "lines")  # top, right, bottom, left
   )
 
+spring_kelp_plot <- spring_kelp_plot +
+  theme(
+    axis.title = element_text(size = 18),       # axis titles
+    axis.text = element_text(size = 16),        # axis labels
+    legend.title = element_text(size = 18),     # legend title
+    legend.text = element_text(size = 16)       # legend items
+  )
+
+summer_kelp_plot_no_y <- summer_kelp_plot_no_y +
+  theme(
+    axis.title = element_text(size = 18),
+    axis.text = element_text(size = 16),
+    legend.title = element_text(size = 18),
+    legend.text = element_text(size = 16)
+  )
+
 # Combine plots
 library(ggpubr)
 lm_spring_summer_plot <- ggarrange(
@@ -1185,9 +1414,10 @@ lm_spring_summer_plot <- ggarrange(
   nrow = 1,
   common.legend = TRUE,
   legend = "right",
-  labels = c("A", "B") 
+  labels = c("A", "B"),
+  font.label = list(size = 20, face = "bold")
 )
-
+lm_spring_summer_plot
 ggsave("figures/lm_spring_summer.png", plot = lm_spring_summer_plot , width = 14, height = 7, dpi = 300)
 
 ### SPRING VS SUMMER MODELS ###

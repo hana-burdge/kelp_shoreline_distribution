@@ -377,7 +377,7 @@ all_data_high_tide <- all_data_high_tide %>%
 all_data_high_tide_region_avg <- all_data_high_tide %>% 
   filter(!id %in% c("sc5", "sc6", "sc21", "sc7", "sc20", "bati29", "sc11")) %>% 
   mutate(region = case_when(
-    id %in% c("sc3", "sc18") ~ "1",
+    id %in% c("sc3", "sc18", "sc17") ~ "1",
     id %in% c("sc4", "bati12", "bati3") ~ "2",
     id %in% c("sc1", "sc2", "bati5") ~ "3",
     id %in% c("sc9", "bati9", "sc10") ~ "4"
@@ -398,7 +398,7 @@ temp_time_facet <- ggplot(all_data_high_tide_region_avg) +
     x = "",                 # x-axis label
     y = "Mean Temperature (°C)"  # y-axis label
   ) +
-  theme_bw() +
+  theme_classic() +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1)  # rotate labels to avoid overlap
   ) +
