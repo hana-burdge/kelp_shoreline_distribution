@@ -383,34 +383,35 @@ all_data_high_tide_region_avg <- all_data_high_tide %>%
     id %in% c("sc9", "bati9", "sc10") ~ "4"
   )) %>% 
   group_by(region, date) %>% 
-  summarise(avg_temp = mean(temp, na.rm = TRUE)) 
+  summarise(
+    avg_temp = mean(temp, na.rm = TRUE),
+    sd_temp  = sd(temp, na.rm = TRUE),
+    .groups = "drop"
+  )
 
 # plotting temperature by region
 library(scales)  # for date formatting
-temp_time_facet <- ggplot(all_data_high_tide_region_avg) +
-  geom_line(aes(date, avg_temp)) +
+temp_time_facet <- ggplot(all_data_high_tide_region_avg, aes(x = date, y = avg_temp)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = avg_temp - sd_temp, ymax = avg_temp + sd_temp),
+              alpha = 0.4, fill = "grey") +  # adjust color/alpha as desired
   facet_wrap(~ region, scales = "free_y", ncol = 1) +
   scale_x_date(
-    date_labels = "%b %Y",      # label format: Month Year
-    date_breaks = "1 month"     # place a tick every month
+    date_labels = "%b %Y",
+    date_breaks = "1 month"
   ) +
   labs(
-    x = "",                 # x-axis label
-    y = "Mean Temperature (°C)"  # y-axis label
+    x = "",
+    y = "Mean Daily Temperature (°C)"
   ) +
   theme_classic() +
   theme(
-    axis.text.x = element_text(angle = 45, hjust = 1)  # rotate labels to avoid overlap
-  ) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 14),   # rotate labels to avoid overlap
-        axis.title.x = element_text(size = 16),  # x-axis label
-        axis.title.y = element_text(size = 16),  # y-axis label
-        axis.text.y  = element_text(size = 14),   # y-axis tick labels
-        legend.title = element_text(size = 16),  # legend title font size
-        legend.text = element_text(size = 14),    # legend item font size
-        strip.text = element_text(size = 16) 
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
+    axis.title.x = element_text(size = 16),
+    axis.title.y = element_text(size = 16),
+    axis.text.y  = element_text(size = 14),
+    strip.text = element_text(size = 16)
   )
-
 
 temp_time_facet
 
